@@ -17,6 +17,6 @@
 
 typedef std::map<std::string, std::string> map;
 
-char** my_split(char *str, char delim);
+char** my_split(const char *str, char delim);
 
 #endif

@@ -1,9 +1,9 @@
 #include "webserv.hpp"
 
-char** my_split(char *str, char delim) 
+char** my_split(const char *str, char delim) 
 {
     int num_tokens = 1;
-    for (char *p = str; *p; ++p) 
+    for (char *p = (char *)str; *p; ++p) 
     {
         if (*p == delim)
             ++num_tokens;
@@ -14,7 +14,7 @@ char** my_split(char *str, char delim)
     for (int i = 0; i < num_tokens; ++i)
         tokens[i] = NULL;
     int token_index = 0;
-    char *token = strtok(str, &delim);
+    char *token = strtok((char *)str, &delim);
     while (token != NULL) {
         tokens[token_index] = new char[strlen(token) + 1];
         if (!tokens[token_index]) {

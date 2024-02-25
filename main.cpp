@@ -16,52 +16,36 @@ map read_file_extensions(const char *filename)
     map extensions;
     std::ifstream file(filename);
     std::string line;
-
+    char **pair;
     if (!file.is_open())
     {
         std::cerr << "Error: Unable to open file " << filename << std::endl;
         return extensions;
     }
-    while (std::getline(file, line)) 
+    while (getline(file, line)) 
     {
-        std::istringstream iss(line);
-        std::string key, value;
-        if (std::getline(iss, key, ':') && std::getline(iss, value))
-        {
-            // Trim leading and trailing whitespace from key and value
-            key.erase(0, key.find_first_not_of(" \t"));
-            key.erase(key.find_last_not_of(" \t") + 1);
-            value.erase(0, value.find_first_not_of(" \t"));
-            value.erase(value.find_last_not_of(" \t") + 1);
-            extensions[key] = value;
-        }
-        else
-            std::cerr << "Warning: Invalid line format in file " << filename << std::endl;
+        pair = my_split(line.c_str(), ':');
+        extensions[pair[0]] = pair[1];
     }
     file.close();
     return extensions;
 }
 
-map parse_header(char *buffer)
+std::string parse_header(char *buffer)
 {
     map m;
     char **lines = my_split(buffer, '\n');
+    char **pair;
+    char **result;
     for (int j = 0; lines[j]; j++)
     {
-        if (!strncmp(lines[j], "Content-Length", 14))
-        {
-            char **pair = my_split(lines[j], ':');
-            m[pair[0]] = pair[1];
-        }
-        else if (!strncmp(lines[j], "Content-Type", 12))
-        {
-            char **pair = my_split(lines[j], ':');
-            m[pair[0]] = pair[1];
-        }
+        if (!strncmp(lines[j], "Content-Type", 12))
+            pair = my_split(lines[j], ':');
         else if (lines[j][0] == '\r' && lines[j][1] == '\n')
             break;
     }
-    return m;
+    result = my_split(pair[1], ' ');
+    return (std::string)result[0];
 }
 
 void multiplexing()
@@ -126,11 +110,17 @@ void multiplexing()
                     ssize_t redbyte;
                     redbyte = read(events[i].data.fd, buffer, 1023);
                     i = 1;
-                    map m = parse_header(buffer);
-                    print_keyVal(m);
+                    std::string cn_type = parse_header(buffer);
+                    std::cout << cn_type << std::endl; 
                     // to modify;
-                    map extensions = read_file_extensions("fileExtensions");
-                    print_keyVal(extensions);
+                    map m = read_file_extensions("fileExtensions");
+                    // print_keyVal(m);
+                    map::iterator it;
+                    it = m.find(cn_type);
+                    if (it != m.end())
+                        std::cout << "extension: " << it->second << std::endl;
+                    else
+                        std::cout << "error\n";
                     break;
                 }
                 if (events[i].events & EPOLLOUT && i == 1)
