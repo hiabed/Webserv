@@ -1,10 +1,26 @@
-#include <sys/wait.h>
-#include <iostream>
-#include <cstring>
-#include <sys/epoll.h>
-#include <arpa/inet.h>
+#include "webserv.hpp"
 
-#define PORT 8082
+map parse_header(char *buffer)
+{
+    map m;
+    char **lines = my_split(buffer, '\n');
+    for (int j = 0; lines[j]; j++)
+    {
+        if (!strncmp(lines[j], "Content-Length", 14))
+        {
+            char **pair = my_split(lines[j], ':');
+            m[pair[0]] = pair[1];
+        }
+        else if (!strncmp(lines[j], "Content-Type", 12))
+        {
+            char **pair = my_split(lines[j], ':');
+            m[pair[0]] = pair[1];
+        }
+        else if (lines[j][0] == '\r' && lines[j][1] == '\n')
+            break;
+    }
+    return m;
+}
 
 void multiplexing()
 {
@@ -27,7 +43,7 @@ void multiplexing()
     if(bind(socketFD,(struct sockaddr*)&serverAdress,sizeof(serverAdress)) != 0)
         std::cerr<<"Cannot bind to port : "<<PORT << "\n";
     if(listen(socketFD,10) == 0)
-        std::cout<<"listenning to "<< PORT <<" [...]" <<std::endl;
+        std::cout << "listenning to " << PORT << " [...]" << std::endl;
     else
     {
         std::cerr<<"Error listen\n";
@@ -38,7 +54,6 @@ void multiplexing()
     if(epoll_ctl(epollFD,EPOLL_CTL_ADD,socketFD,&event) == -1)
         exit(1);
     epoll_event events[1024];
-    int i =  0;
     while (1)
     {
         int clientSocketFD;
@@ -66,11 +81,18 @@ void multiplexing()
                     char buffer[1042];
                     /* event for read from fd*/
                     memset(buffer,0,1024);
-                    ssize_t redbyte = read(events[i].data.fd, buffer, 1023);
+                    ssize_t redbyte;
+                    redbyte = read(events[i].data.fd, buffer, 1023);
                     i = 1;
-                    std::cout << "readed data from fd:\n\n";
-                    std::cout << buffer <<"\n";
-
+                    // std::cout << "readed data from fd:\n\n";
+                    // std::cout << buffer << "\n";
+                    map m = parse_header(buffer);
+                    map::iterator it = m.begin();
+                    while (it != m.end())
+                    {
+                        std::cout << "\n\n" << it->first << ":" << it->second << std::endl;
+                        it++;
+                    }
                     break;
                 }
                 if (events[i].events & EPOLLOUT && i == 1)
