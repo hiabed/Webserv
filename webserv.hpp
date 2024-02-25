@@ -10,8 +10,11 @@
 #include <arpa/inet.h>
 #include <map>
 #include <algorithm>
+#include <fstream>
+#include <sstream>
 
 #define PORT 8082
+
 typedef std::map<std::string, std::string> map;
 
 char** my_split(char *str, char delim);

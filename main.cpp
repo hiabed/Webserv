@@ -1,5 +1,47 @@
 #include "webserv.hpp"
 
+void print_keyVal(map m)
+{
+    map::iterator it = m.begin();
+    while (it != m.end())
+    {
+        std::cout << it->first << ": " << it->second << std::endl;
+        it++;
+    }
+    std::cout << "\n";
+}
+
+map read_file_extensions(const char *filename)
+{
+    map extensions;
+    std::ifstream file(filename);
+    std::string line;
+
+    if (!file.is_open())
+    {
+        std::cerr << "Error: Unable to open file " << filename << std::endl;
+        return extensions;
+    }
+    while (std::getline(file, line)) 
+    {
+        std::istringstream iss(line);
+        std::string key, value;
+        if (std::getline(iss, key, ':') && std::getline(iss, value))
+        {
+            // Trim leading and trailing whitespace from key and value
+            key.erase(0, key.find_first_not_of(" \t"));
+            key.erase(key.find_last_not_of(" \t") + 1);
+            value.erase(0, value.find_first_not_of(" \t"));
+            value.erase(value.find_last_not_of(" \t") + 1);
+            extensions[key] = value;
+        }
+        else
+            std::cerr << "Warning: Invalid line format in file " << filename << std::endl;
+    }
+    file.close();
+    return extensions;
+}
+
 map parse_header(char *buffer)
 {
     map m;
@@ -84,15 +126,11 @@ void multiplexing()
                     ssize_t redbyte;
                     redbyte = read(events[i].data.fd, buffer, 1023);
                     i = 1;
-                    // std::cout << "readed data from fd:\n\n";
-                    // std::cout << buffer << "\n";
                     map m = parse_header(buffer);
-                    map::iterator it = m.begin();
-                    while (it != m.end())
-                    {
-                        std::cout << "\n\n" << it->first << ":" << it->second << std::endl;
-                        it++;
-                    }
+                    print_keyVal(m);
+                    // to modify;
+                    map extensions = read_file_extensions("fileExtensions");
+                    print_keyVal(extensions);
                     break;
                 }
                 if (events[i].events & EPOLLOUT && i == 1)
