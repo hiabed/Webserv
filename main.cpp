@@ -49,12 +49,19 @@ void PutBodyInFile(char *buffer, std::string extension)
     size_t pos = header.find("\r\n\r\n");
     if(pos != std::string::npos) // means found;
     {
-        body = header.substr(pos + 4);
+        try
+        {
+            body = header.substr(pos + 4);
+        }
+        catch(const std::exception& e)
+        {
+            std::cerr << e.what() << '\n';
+        }
         std::string filename = generateUniqueFilename();
         std::ofstream outFile((filename + extension).c_str());
         if (outFile.is_open())
         {
-            outFile << body;
+            outFile << body << '\0';
             outFile.close();
         } 
         else
@@ -74,7 +81,10 @@ std::string parse_header(char *buffer)
         std::string str;
         str = token.substr(0, 12);
         if (str == content_type)
-            return token.substr(14, 10);
+        {
+            //9 number handled only html file; i.g for text should be 10;
+            return token.substr(14, 9);
+        }
     }
     return "";
 }
@@ -110,6 +120,7 @@ void multiplexing()
     event.data.fd = socketFD;
     if(epoll_ctl(epollFD,EPOLL_CTL_ADD,socketFD,&event) == -1)
         exit(1);
+    int j = 0;
     epoll_event events[1024];
     while (1)
     {
@@ -140,22 +151,27 @@ void multiplexing()
                     memset(buffer,0,1024);
                     ssize_t readbyte;
                     readbyte = read(events[i].data.fd, buffer, 1023);
-                    i = 1;
-
+                   
+                    std::cout<<buffer<<"\n";
                     std::string cn_type = parse_header(buffer);
                     map m = read_file_extensions("fileExtensions");
-                    map::iterator it = m.find(cn_type);
+                    map::iterator it = m.begin();
+                    it = m.find(cn_type);
                     // optional if statement;
-                    if (it == m.end())
+                    if (it != m.end())
+                        PutBodyInFile(buffer, it->second);
+                    else if (it == m.end())
                         std::cout << "Extension not found\n";
-                    PutBodyInFile(buffer, it->second);
-                    break;
+                    j = 1;
+                    break; 
                 }
-                if (events[i].events & EPOLLOUT && i == 1)
+                if (events[i].events & EPOLLOUT && j == 1)
                 {
                     /*event for write to client  */
-                    std::string response = "HTTP/1.1\r\nContent-Type: text/html\r\n\r\nhello world";
-                    send(events[i].data.fd,response.c_str(), response.length(), 0);
+
+                    std::string response = "HTTP/1.1 201 OK\r\nContent-Type: text/html\r\n\r\n";
+                    if (send(events[i].data.fd,response.c_str(), response.length(), 0) == - 1)
+                        std::cout << "=====here=====\n";
                     epoll_ctl(epollFD, EPOLL_CTL_DEL, clientSocketFD, NULL);
                     close(events[i].data.fd);
                 }
