@@ -4,7 +4,7 @@ CXX = c++
 
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98
 
-CXXFILES = main.cpp \
+CXXFILES = main.cpp my_split.cpp
 
 OBJ = ${CXXFILES:.cpp=.o}
 
