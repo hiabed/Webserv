@@ -2,9 +2,9 @@ NAME = webserv
 
 CXX = c++
 
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -fsanitize=address -g3
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98
 
-CXXFILES = main.cpp my_split.cpp \
+CXXFILES = main.cpp \
 
 OBJ = ${CXXFILES:.cpp=.o}
 

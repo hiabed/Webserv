@@ -4,6 +4,7 @@
         "stdexcept": "cpp",
         "iosfwd": "cpp",
         "fstream": "cpp",
-        "new": "cpp"
+        "new": "cpp",
+        "iostream": "cpp"
     }
 }
