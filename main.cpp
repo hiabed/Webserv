@@ -31,14 +31,26 @@ map read_file_extensions(const char *filename)
     return extensions;
 }
 
-void parse_body(char *buffer, ssize_t length)
+void PutBodyInFile(char *buffer, std::string extension)
 {
-    std::string header(buffer);
+    std::string header = buffer;
+    std::string body;
     size_t pos = header.find("\r\n\r\n");
     if(pos != std::string::npos) // means found;
     {
-        std::string body = header.substr(pos+1);
+        body = header.substr(pos + 4);
+        std::ofstream outFile(("outfile" + extension).c_str());
+        if (outFile.is_open())
+        {
+            outFile << body;
+            outFile.close();
+            std::cout << "Body written to file 'output." + extension << "'." << std::endl;
+        } 
+        else
+            std::cerr << "Error: Unable to open file for writing." << std::endl;
     }
+    else
+        std::cerr << "Error: Body not found in buffer." << std::endl;
 }
 
 std::string parse_header(char *buffer)
@@ -126,6 +138,7 @@ void multiplexing()
                         std::cout << it->second << std::endl;
                     else
                         std::cout << "error\n";
+                    PutBodyInFile(buffer, it->second);
                     break;
                 }
                 if (events[i].events & EPOLLOUT && i == 1)
