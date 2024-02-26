@@ -1,6 +1,7 @@
 #ifndef WEBSERV_HPP
 #define WEBSERV_HPP
 
+#include <sys/time.h>
 #include <cstring>
 #include <cstdlib>
 #include <sys/wait.h>

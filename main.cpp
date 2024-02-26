@@ -11,6 +11,17 @@ void print_keyVal(map m)
     std::cout << "\n";
 }
 
+std::string generateUniqueFilename()
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+
+    std::ostringstream filename_stream;
+    filename_stream << "outfile_" << tv.tv_sec;
+
+    return filename_stream.str();
+}
+
 map read_file_extensions(const char *filename)
 {
     map extensions;
@@ -39,12 +50,12 @@ void PutBodyInFile(char *buffer, std::string extension)
     if(pos != std::string::npos) // means found;
     {
         body = header.substr(pos + 4);
-        std::ofstream outFile(("outfile" + extension).c_str());
+        std::string filename = generateUniqueFilename();
+        std::ofstream outFile((filename + extension).c_str());
         if (outFile.is_open())
         {
             outFile << body;
             outFile.close();
-            std::cout << "Body written to file 'output." + extension << "'." << std::endl;
         } 
         else
             std::cerr << "Error: Unable to open file for writing." << std::endl;
@@ -134,10 +145,9 @@ void multiplexing()
                     std::string cn_type = parse_header(buffer);
                     map m = read_file_extensions("fileExtensions");
                     map::iterator it = m.find(cn_type);
-                    if (it != m.end())
-                        std::cout << it->second << std::endl;
-                    else
-                        std::cout << "error\n";
+                    // optional if statement;
+                    if (it == m.end())
+                        std::cout << "Extension not found\n";
                     PutBodyInFile(buffer, it->second);
                     break;
                 }
