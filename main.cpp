@@ -60,17 +60,18 @@ void multiplexing()
             {
                 if (events[i].events & EPOLLIN)
                 {
-                    char buffer[1024];
+                    char buffer[10000];
                     /* event for read from fd*/
                     memset(buffer,0,1024);
                     ssize_t readbyte;
                     readbyte = read(events[i].data.fd, buffer, 1024);
-                    if(readbyte < 1024)
+                    std::cout<<buffer<<"\n";
+                    std::cout << "\n\n\n               =======================             \n\n\n";
+                    // if(readbyte == 1024)
                         j = 1;
-                    else if(readbyte < 0)
-                       std::cout<<"-----------gggggg-----------------1\n";
+                    // else if(readbyte < 0)
+                    //    return ;
                     // else
-                    //     std::cout<<buffer<<"\n";
 
                     map::iterator it;
                     map m;
