@@ -9,7 +9,7 @@ void PutBodyInFile(char *buffer, std::string extension)
     {
         body = header.substr(pos + 4);
         std::string filename = generateUniqueFilename();
-        std::ofstream outFile((filename + extension).c_str());
+        std::ofstream outFile((filename + extension).c_str(), std::ios::app);
         if (outFile.is_open())
         {
             outFile << body;

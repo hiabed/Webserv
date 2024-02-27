@@ -35,6 +35,7 @@ void multiplexing()
         exit(1);
     int j = 0;
     epoll_event events[1024];
+    int flag = 0;
     while (1)
     {
         int clientSocketFD;
@@ -59,34 +60,47 @@ void multiplexing()
             {
                 if (events[i].events & EPOLLIN)
                 {
-                    char buffer[1042];
+                    char buffer[1024];
                     /* event for read from fd*/
                     memset(buffer,0,1024);
                     ssize_t readbyte;
-                    readbyte = read(events[i].data.fd, buffer, 1023);
-                   
-                    std::cout<<buffer<<"\n";
-                    std::string cn_type = parse_header(buffer);
-                    map m = read_file_extensions("fileExtensions");
-                    map::iterator it = m.begin();
-                    it = m.find(cn_type);
-                    // optional if statement;
+                    readbyte = read(events[i].data.fd, buffer, 1024);
+                    if(readbyte < 1024)
+                        j = 1;
+                    else if(readbyte < 0)
+                       std::cout<<"-----------gggggg-----------------1\n";
+                    // else
+                    //     std::cout<<buffer<<"\n";
+
+                    map::iterator it;
+                    map m;
+                    if (flag == 0)
+                    {
+                        std::string cn_type = parse_header(buffer);
+                        m = read_file_extensions("fileExtensions");
+                        it = m.find(cn_type);
+                        flag++;
+                    }
+                        // optional if statement;
                     if (it != m.end())
                         PutBodyInFile(buffer, it->second);
                     else if (it == m.end())
                         std::cout << "Extension not found\n";
-                    j = 1;
-                    break; 
+                        // std::cout << "check: " << it->second << std::endl;
+                    // }
+                    
+                    // break; 
                 }
                 if (events[i].events & EPOLLOUT && j == 1)
                 {
                     /*event for write to client  */
 
-                    std::string response = "HTTP/1.1 201 OK\r\nContent-Type: text/html\r\n\r\n";
+                    std::string response = "HTTP/1.1 201 OK\r\nContent-Type: text/html\r\n\r\nhello";
                     if (send(events[i].data.fd,response.c_str(), response.length(), 0) == - 1)
                         std::cout << "=====here=====\n";
                     epoll_ctl(epollFD, EPOLL_CTL_DEL, clientSocketFD, NULL);
                     close(events[i].data.fd);
+                    j = 0;
                 }
             }
         }
