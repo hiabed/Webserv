@@ -1,8 +1,8 @@
 #include "webserv.hpp"
 
-std::string parse_header(char *buffer)
+std::string parse_header(std::string to_join)
 {
-    std::istringstream stream (buffer);
+    std::istringstream stream (to_join);
     std::string token;
     while(getline(stream,token,'\n'))
     {

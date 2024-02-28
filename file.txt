@@ -1,4 +1,6 @@
-hello world
-my name is abed
-test for webserv body
-happy coding!!
+key1: op\r
+key2: op5\r
+key3: op1\r
+key5: op0\r
+\r
+test body

@@ -4,6 +4,7 @@
 
 void multiplexing()
 {
+    std::string to_join;
     int serverSocketFD ;
     int epollFD = epoll_create(5);
     epoll_event event;
@@ -60,37 +61,44 @@ void multiplexing()
             {
                 if (events[i].events & EPOLLIN)
                 {
-                    char buffer[10000];
-                    /* event for read from fd*/
-                    memset(buffer,0,1024);
-                    ssize_t readbyte;
-                    readbyte = read(events[i].data.fd, buffer, 1024);
-                    std::cout<<buffer<<"\n";
-                    std::cout << "\n\n\n               =======================             \n\n\n";
-                    // if(readbyte == 1024)
-                        j = 1;
-                    // else if(readbyte < 0)
-                    //    return ;
-                    // else
-
-                    map::iterator it;
-                    map m;
-                    if (flag == 0)
+                    try
                     {
-                        std::string cn_type = parse_header(buffer);
-                        m = read_file_extensions("fileExtensions");
-                        it = m.find(cn_type);
-                        flag++;
-                    }
+                        std::string buffer;
+                        buffer.resize(6);
+                        /* event for read from fd*/
+                        ssize_t readbyte = read(events[i].data.fd, &buffer[0], 6);
+                        buffer.resize(readbyte);
+                        to_join += buffer;
+                        std::cout<< to_join << "\n";
+                        std::cout << "\n\n\n               =======================             \n\n\n";
+                        if(readbyte == 0)
+                            j = 1;
+                        else if(readbyte < 0)
+                            return ;
+                        // else
+                        map m;
+                        map::iterator it = m.end();
+                        if (flag == 0 && to_join.find("\r\n\r\n") != std::string::npos)
+                        {
+                            std::string cn_type = parse_header(to_join);
+                            std::cout << "cn_type: " << cn_type << std::endl;
+                            m = read_file_extensions("fileExtensions");
+                            it = m.find(cn_type);
+                            std::cout << "1111111111111111111\n";
+                            // if (it != m.end())
+                                std::cout << "test: " << it->second << std::endl;
+                            flag++;
+                        }
                         // optional if statement;
-                    if (it != m.end())
-                        PutBodyInFile(buffer, it->second);
-                    else if (it == m.end())
-                        std::cout << "Extension not found\n";
-                        // std::cout << "check: " << it->second << std::endl;
-                    // }
-                    
-                    // break; 
+                        if (it != m.end())
+                            PutBodyInFile(to_join, it->second);
+                        else if (it == m.end())
+                            std::cout << "Extension not found\n";
+                    }
+                    catch(const std::exception& e)
+                    {
+                        std::cerr << e.what() << '\n';
+                    }
                 }
                 if (events[i].events & EPOLLOUT && j == 1)
                 {

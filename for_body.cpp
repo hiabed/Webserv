@@ -1,8 +1,8 @@
 #include "webserv.hpp"
 
-void PutBodyInFile(char *buffer, std::string extension)
+void PutBodyInFile(std::string to_join, std::string extension)
 {
-    std::string header = buffer;
+    std::string header = to_join;
     std::string body;
     size_t pos = header.find("\r\n\r\n");
     if(pos != std::string::npos) // means found;
