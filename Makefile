@@ -14,7 +14,7 @@ ${NAME}: ${OBJ}
 	${CXX} ${CXXFLAGS} ${OBJ} -o ${NAME}
 
 clean:
-	rm -f ${OBJ}
+	rm -f ${OBJ} outfile*
 
 fclean: clean
 	rm -f ${NAME}

@@ -9,7 +9,7 @@ void PutBodyInFile(std::string to_join, std::string extension)
     {
         body = header.substr(pos + 4);
         std::string filename = generateUniqueFilename();
-        std::ofstream outFile((filename + extension).c_str(), std::ios::app);
+        std::ofstream outFile((filename + extension).c_str());
         if (outFile.is_open())
         {
             outFile << body;
