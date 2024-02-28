@@ -14,7 +14,7 @@
 #include <fstream>
 #include <sstream>
 
-#define PORT 8082
+#define PORT 8081
 
 typedef std::map<std::string, std::string> map;
 

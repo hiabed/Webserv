@@ -11,8 +11,8 @@ std::string parse_header(std::string to_join)
         str = token.substr(0, 12);
         if (str == content_type)
         {
-            //9 number handled only html file; i.g for text should be 10;
-            return token.substr(14, 9);
+            //9 number handled only html file; i.g for text/jpg should be 10;
+            return token.substr(14, 10);
         }
     }
     return "";
