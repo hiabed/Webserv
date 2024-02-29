@@ -6,6 +6,8 @@ void multiplexing()
 {
     std::string to_join;
     std::string extension;
+    std::string buffer;
+    int count = 0;
     int serverSocketFD ;
     int epollFD = epoll_create(5);
     epoll_event event;
@@ -62,15 +64,24 @@ void multiplexing()
             {
                 if (events[i].events & EPOLLIN)
                 {
-                    std::string buffer;
+                    count++;
+                    std::cout << "\n========= count: " << count << "==========\n";
                     buffer.resize(1024);
                     /* event for read from fd*/
                     ssize_t readbyte = read(events[i].data.fd, &buffer[0], 1024);
                     buffer.resize(readbyte);
                     to_join += buffer;
                     std::cout  << "\n\n---------" << readbyte << "---------\n\n";
-                    if(readbyte < 1024)
+                    if (readbyte < 1024)
+                    {
+                        std::cout  << "\n\n---------" << readbyte << "---------\n\n";
+                        sleep(3);
+                    }
+                    if(readbyte == 0)
+                    {
+                        std::cout << "\n\n---------- 0 ------------\n\n";
                         j = 1;
+                    }
                     else if(readbyte < 0)
                         return ;
                     map m;
@@ -79,15 +90,18 @@ void multiplexing()
                         it = m.end();
                     if (flag == 0 && to_join.find("\r\n\r\n") != std::string::npos)
                     {
+                        std::cout << "\n\nEnter Header\n\n";
+                        sleep(3);
                         std::string cn_type = parse_header(to_join);
                         m = read_file_extensions("fileExtensions");
                         it = m.find(cn_type);
                         extension = it->second;
                         flag++;
                     }
-                    if (it != m.end() && readbyte < 1024)
+                    if (it != m.end() && readbyte == 0)
                     {
-                        std::cout << "\n\nEnter\n\n";
+                        std::cout << "\n\nEnter Body\n\n";
+                        sleep(3);
                         PutBodyInFile(to_join, extension);
                         to_join.clear();
                     }
@@ -95,12 +109,15 @@ void multiplexing()
                 if (events[i].events & EPOLLOUT && j == 1)
                 {
                     /*event for write to client  */
+                    std::cout << "\n...............test................\n";
+                    sleep(5);
                     std::string response = "HTTP/1.1 201 OK\r\nContent-Type: text/html\r\n\r\nhello";
                     if (send(events[i].data.fd,response.c_str(), response.length(), 0) == - 1)
                         std::cout << "=====here=====\n";
                     epoll_ctl(epollFD, EPOLL_CTL_DEL, clientSocketFD, NULL);
                     close(events[i].data.fd);
                     j = 0;
+                    flag = 0;
                 }
             }
         }
