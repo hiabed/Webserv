@@ -2,12 +2,33 @@
 
 // split leads to a heap-buffer-overflow;
 
+std::string readUntilSeparator(int fd, std::string& contentType)
+{
+    std::string buffer;
+    char temp[1024];
+    ssize_t readbyte;
+    
+    while ((readbyte = read(fd, temp, 1024)) > 0)
+    {
+        std::cout << "Read bytes: " << readbyte << std::endl;
+        buffer.append(temp, readbyte);
+        size_t pos = buffer.find("\r\n\r\n");
+        if (pos != std::string::npos)
+        {
+            contentType = parse_header(buffer);
+            std::cout << "content type: " << contentType << std::endl;
+            return buffer.substr(pos + 4); // Exclude the separator and header
+        }
+    }
+    return buffer; // In case read returns 0 bytes
+}
+
 void multiplexing()
 {
     std::string to_join;
     std::string extension;
     std::string buffer;
-    int count = 0;
+    // int count = 0;
     int serverSocketFD ;
     int epollFD = epoll_create(5);
     epoll_event event;
@@ -39,7 +60,7 @@ void multiplexing()
         exit(1);
     int j = 0;
     epoll_event events[1024];
-    int flag = 0;
+    // int flag = 0;
     while (1)
     {
         int clientSocketFD;
@@ -64,60 +85,55 @@ void multiplexing()
             {
                 if (events[i].events & EPOLLIN)
                 {
-                    count++;
-                    std::cout << "\n========= count: " << count << "==========\n";
-                    buffer.resize(1024);
                     /* event for read from fd*/
-                    ssize_t readbyte = read(events[i].data.fd, &buffer[0], 1024);
-                    buffer.resize(readbyte);
-                    to_join += buffer;
-                    std::cout  << "\n\n---------" << readbyte << "---------\n\n";
-                    if (readbyte < 1024)
+                    std::string contentType;
+                    std::string body = readUntilSeparator(events[i].data.fd, contentType);
+                    if (!body.empty()) 
                     {
-                        std::cout  << "\n\n---------" << readbyte << "---------\n\n";
-                        sleep(3);
+                        map m = read_file_extensions("fileExtensions");
+                        map::iterator it;
+                        it = m.find(contentType);
+                        if (it != m.end()) 
+                        {
+                            std::string extension = it->second;
+                            // Append mode to append to existing file
+                            std::string fileName = "outfile";
+                            std::ofstream outFile((fileName + extension).c_str(), std::ios::app);
+                            if (outFile.is_open()) 
+                            {
+                                outFile << body; // Write body to file
+                                // Read remaining body and write to file directly
+                                char buffer[1024];
+                                ssize_t readbyte;
+                                while ((readbyte = read(events[i].data.fd, buffer, 1024)) > 0)
+                                {
+                                    std::cout << "--------- " << readbyte << "---------\n";
+                                    outFile.write(buffer, readbyte);
+                                }
+                                std::cout << "\n========== " << j << " ============\n";
+                                outFile.close();
+                                j = 1;
+                                std::cout << "\n========== " << j << " ============\n";
+                            }
+                            else
+                                std::cerr << "Error opening file for appending." << std::endl;
+                        }
+                        else
+                            std::cerr << "Content type not found in map." << std::endl;
                     }
-                    if(readbyte == 0)
-                    {
-                        std::cout << "\n\n---------- 0 ------------\n\n";
-                        j = 1;
-                    }
-                    else if(readbyte < 0)
-                        return ;
-                    map m;
-                    map::iterator it;
-                    if (flag == 0)
-                        it = m.end();
-                    if (flag == 0 && to_join.find("\r\n\r\n") != std::string::npos)
-                    {
-                        std::cout << "\n\nEnter Header\n\n";
-                        sleep(3);
-                        std::string cn_type = parse_header(to_join);
-                        m = read_file_extensions("fileExtensions");
-                        it = m.find(cn_type);
-                        extension = it->second;
-                        flag++;
-                    }
-                    if (it != m.end() && readbyte == 0)
-                    {
-                        std::cout << "\n\nEnter Body\n\n";
-                        sleep(3);
-                        PutBodyInFile(to_join, extension);
-                        to_join.clear();
-                    }
+                    else
+                        std::cerr << "Error reading request." << std::endl;
                 }
                 if (events[i].events & EPOLLOUT && j == 1)
                 {
+                    std::cout << "\n\n========== Enter here ============\n\n";
                     /*event for write to client  */
-                    std::cout << "\n...............test................\n";
-                    sleep(5);
                     std::string response = "HTTP/1.1 201 OK\r\nContent-Type: text/html\r\n\r\nhello";
                     if (send(events[i].data.fd,response.c_str(), response.length(), 0) == - 1)
                         std::cout << "=====here=====\n";
                     epoll_ctl(epollFD, EPOLL_CTL_DEL, clientSocketFD, NULL);
                     close(events[i].data.fd);
                     j = 0;
-                    flag = 0;
                 }
             }
         }
