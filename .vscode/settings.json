@@ -1,12 +1,5 @@
 {
     "files.associations": {
-        "cstring": "cpp",
-        "stdexcept": "cpp",
-        "iosfwd": "cpp",
-        "fstream": "cpp",
-        "new": "cpp",
-        "iostream": "cpp",
-        "ostream": "cpp",
-        "*.tcc": "cpp"
+        "ostream": "cpp"
     }
 }

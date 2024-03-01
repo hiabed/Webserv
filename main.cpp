@@ -62,7 +62,7 @@ void multiplexing()
     while (1)
     {
         int clientSocketFD;
-        int numEvent = epoll_wait(epollFD,events,1024,-1); 
+        int numEvent = epoll_wait(epollFD,events, 1024, -1); 
         for (int i = 0; i < numEvent; ++i)
         {
             
@@ -83,8 +83,8 @@ void multiplexing()
             {
                 if (events[i].events & EPOLLIN)
                 {
-                    ssize_t sum = 0;
                     /* event for read from fd*/
+                    ssize_t sum = 0;
                     std::string contentType;
                     std::string content_length;
                     std::string body = readUntilSeparator(events[i].data.fd, contentType, content_length);
@@ -106,14 +106,12 @@ void multiplexing()
                                 // Read remaining body and write to file directly
                                 char buffer[1024];
                                 ssize_t readbyte = 0;
-                                memset(buffer, 0, sizeof(buffer));
                                 std::cout << content_length << std::endl;
                                 while (sum != atoi(content_length.c_str()))
                                 {
-                                    readbyte = read(events[i].data.fd, buffer, 1023);
+                                    readbyte = read(events[i].data.fd, buffer, 1024);
                                     sum += readbyte;
                                     outFile.write(buffer, readbyte);
-                                    memset(buffer, 0, sizeof(buffer));
                                 }
                                 outFile.close();
                                 j = 1;
