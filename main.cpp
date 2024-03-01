@@ -2,7 +2,7 @@
 
 // split leads to a heap-buffer-overflow;
 
-std::string readUntilSeparator(int fd, std::string& contentType)
+std::string readUntilSeparator(int fd, std::string& contentType, std::string& content_length, ssize_t &sum)
 {
     std::string buffer;
     char temp[1024];
@@ -10,13 +10,12 @@ std::string readUntilSeparator(int fd, std::string& contentType)
     
     while ((readbyte = read(fd, temp, 1024)) > 0)
     {
-        std::cout << "Read bytes: " << readbyte << std::endl;
         buffer.append(temp, readbyte);
         size_t pos = buffer.find("\r\n\r\n");
         if (pos != std::string::npos)
         {
-            contentType = parse_header(buffer);
-            std::cout << "content type: " << contentType << std::endl;
+            parse_header(buffer, contentType, content_length);
+            sum += buffer.substr(pos + 4).size();
             return buffer.substr(pos + 4); // Exclude the separator and header
         }
     }
@@ -85,9 +84,11 @@ void multiplexing()
             {
                 if (events[i].events & EPOLLIN)
                 {
+                    ssize_t sum = 0;
                     /* event for read from fd*/
                     std::string contentType;
-                    std::string body = readUntilSeparator(events[i].data.fd, contentType);
+                    std::string content_length;
+                    std::string body = readUntilSeparator(events[i].data.fd, contentType, content_length, sum);
                     if (!body.empty()) 
                     {
                         map m = read_file_extensions("fileExtensions");
@@ -97,21 +98,36 @@ void multiplexing()
                         {
                             std::string extension = it->second;
                             // Append mode to append to existing file
-                            std::string fileName = "outfile";
+                            std::string fileName = generateUniqueFilename();
                             std::ofstream outFile((fileName + extension).c_str(), std::ios::app);
                             if (outFile.is_open()) 
                             {
                                 outFile << body; // Write body to file
                                 // Read remaining body and write to file directly
                                 char buffer[1024];
-                                ssize_t readbyte;
-                                while ((readbyte = read(events[i].data.fd, buffer, 1024)) > 0)
+                                ssize_t readbyte = 0;
+                                memset(buffer, 0, sizeof(buffer));
+                                std::cout << content_length << std::endl;
+                                while (sum != atoi(content_length.c_str()))
                                 {
-                                    std::cout << "--------- " << readbyte << "---------\n";
-                                    outFile.write(buffer, readbyte);
+                                    readbyte = read(events[i].data.fd, buffer, 1023);
+                                    sum += readbyte;
+                                    if (sum == atoi(content_length.c_str()))
+                                    {
+                                        std::cout << "\n== sum " << sum << " ==\n";
+                                        break;
+                                    }
+                                    // std::cout << "--------- " << readbyte << "---------\n";
+                                    outFile << std::string("").append(buffer, readbyte);
+                                    memset(buffer, 0, sizeof(buffer));
                                 }
                                 std::cout << "\n========== " << j << " ============\n";
                                 outFile.close();
+                                 std::string response = "HTTP/1.1 201 OK\r\nContent-Type: text/html\r\n\r\nhello";
+                                    if (send(events[i].data.fd,response.c_str(), response.length(), 0) == - 1)
+                                        std::cout << "=====here=====\n";
+                                    epoll_ctl(epollFD, EPOLL_CTL_DEL, clientSocketFD, NULL);
+                                    close(events[i].data.fd);
                                 j = 1;
                                 std::cout << "\n========== " << j << " ============\n";
                             }
