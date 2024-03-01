@@ -2,7 +2,7 @@
 
 // split leads to a heap-buffer-overflow;
 
-std::string readUntilSeparator(int fd, std::string& contentType, std::string& content_length, ssize_t &sum)
+std::string readUntilSeparator(int fd, std::string& contentType, std::string& content_length)
 {
     std::string buffer;
     char temp[1024];
@@ -15,7 +15,6 @@ std::string readUntilSeparator(int fd, std::string& contentType, std::string& co
         if (pos != std::string::npos)
         {
             parse_header(buffer, contentType, content_length);
-            sum += buffer.substr(pos + 4).size();
             return buffer.substr(pos + 4); // Exclude the separator and header
         }
     }
@@ -88,7 +87,7 @@ void multiplexing()
                     /* event for read from fd*/
                     std::string contentType;
                     std::string content_length;
-                    std::string body = readUntilSeparator(events[i].data.fd, contentType, content_length, sum);
+                    std::string body = readUntilSeparator(events[i].data.fd, contentType, content_length);
                     if (!body.empty()) 
                     {
                         map m = read_file_extensions("fileExtensions");
@@ -102,6 +101,7 @@ void multiplexing()
                             std::ofstream outFile((fileName + extension).c_str(), std::ios::app);
                             if (outFile.is_open()) 
                             {
+                                sum += body.size();
                                 outFile << body; // Write body to file
                                 // Read remaining body and write to file directly
                                 char buffer[1024];
@@ -112,24 +112,11 @@ void multiplexing()
                                 {
                                     readbyte = read(events[i].data.fd, buffer, 1023);
                                     sum += readbyte;
-                                    if (sum == atoi(content_length.c_str()))
-                                    {
-                                        std::cout << "\n== sum " << sum << " ==\n";
-                                        break;
-                                    }
-                                    // std::cout << "--------- " << readbyte << "---------\n";
-                                    outFile << std::string("").append(buffer, readbyte);
+                                    outFile.write(buffer, readbyte);
                                     memset(buffer, 0, sizeof(buffer));
                                 }
-                                std::cout << "\n========== " << j << " ============\n";
                                 outFile.close();
-                                 std::string response = "HTTP/1.1 201 OK\r\nContent-Type: text/html\r\n\r\nhello";
-                                    if (send(events[i].data.fd,response.c_str(), response.length(), 0) == - 1)
-                                        std::cout << "=====here=====\n";
-                                    epoll_ctl(epollFD, EPOLL_CTL_DEL, clientSocketFD, NULL);
-                                    close(events[i].data.fd);
                                 j = 1;
-                                std::cout << "\n========== " << j << " ============\n";
                             }
                             else
                                 std::cerr << "Error opening file for appending." << std::endl;
@@ -142,7 +129,7 @@ void multiplexing()
                 }
                 if (events[i].events & EPOLLOUT && j == 1)
                 {
-                    std::cout << "\n\n========== Enter here ============\n\n";
+                    // std::cout << "\n\n========== Enter here ============\n\n";
                     /*event for write to client  */
                     std::string response = "HTTP/1.1 201 OK\r\nContent-Type: text/html\r\n\r\nhello";
                     if (send(events[i].data.fd,response.c_str(), response.length(), 0) == - 1)
