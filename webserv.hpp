@@ -23,7 +23,7 @@ char** my_split(const char *str, char delim);
 std::string generateUniqueFilename();
 void print_keyVal(map m);
 map read_file_extensions(const char *filename);
-std::string parse_header(std::string to_join, std::string &content_type, std::string &content_length);
+std::string parse_header(std::string to_join, std::string &content_type, std::string &content_length, std::string &transfer_encoding);
 void PutBodyInFile(std::string to_join, std::string extension);
 
 #endif

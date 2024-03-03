@@ -2,7 +2,7 @@
 
 // split leads to a heap-buffer-overflow;
 
-std::string readUntilSeparator(int fd, std::string& contentType, std::string& content_length)
+std::string readUntilSeparator(int fd, std::string& contentType, std::string& content_length, std::string &transfer_encoding)
 {
     std::string buffer;
     char temp[1024];
@@ -14,7 +14,7 @@ std::string readUntilSeparator(int fd, std::string& contentType, std::string& co
         size_t pos = buffer.find("\r\n\r\n");
         if (pos != std::string::npos)
         {
-            parse_header(buffer, contentType, content_length);
+            parse_header(buffer, contentType, content_length, transfer_encoding);
             return buffer.substr(pos + 4); // Exclude the separator and header
         }
     }
@@ -87,8 +87,9 @@ void multiplexing()
                     ssize_t sum = 0;
                     std::string contentType;
                     std::string content_length;
-                    std::string body = readUntilSeparator(events[i].data.fd, contentType, content_length);
-                    if (!body.empty()) 
+                    std::string transfer_encoding;
+                    std::string body = readUntilSeparator(events[i].data.fd, contentType, content_length, transfer_encoding);
+                    if (!body.empty() && transfer_encoding != "chunked")
                     {
                         map m = read_file_extensions("fileExtensions");
                         map::iterator it;
@@ -98,7 +99,7 @@ void multiplexing()
                             std::string extension = it->second;
                             // Append mode to append to existing file
                             std::string fileName = generateUniqueFilename();
-                            std::ofstream outFile((fileName + extension).c_str(), std::ios::app);
+                            std::ofstream outFile((fileName + extension).c_str());
                             if (outFile.is_open()) 
                             {
                                 sum += body.size();
@@ -106,7 +107,7 @@ void multiplexing()
                                 // Read remaining body and write to file directly
                                 char buffer[1024];
                                 ssize_t readbyte = 0;
-                                std::cout << content_length << std::endl;
+                                // std::cout << content_length << std::endl;
                                 while (sum != atoi(content_length.c_str()))
                                 {
                                     readbyte = read(events[i].data.fd, buffer, 1024);
@@ -121,6 +122,10 @@ void multiplexing()
                         }
                         else
                             std::cerr << "Content type not found in map." << std::endl;
+                    }
+                    else if (!body.empty() && transfer_encoding == "chunked")
+                    {
+                        
                     }
                     else
                         std::cerr << "Error reading request." << std::endl;
@@ -147,3 +152,10 @@ int main()
 {
     multiplexing();
 }
+
+// chunked;
+// \r\n16
+// asgflakflaskfha;sf
+// \r\n200
+// welkfhvsdlkjvhsd;dsgjksdh
+// \r\n\r\n0
