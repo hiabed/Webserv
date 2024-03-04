@@ -89,46 +89,41 @@ void multiplexing()
                     std::string content_length;
                     std::string transfer_encoding;
                     std::string body = readUntilSeparator(events[i].data.fd, contentType, content_length, transfer_encoding);
-                    map m = read_file_extensions("fileExtensions");
-                    map::iterator it;
-                    it = m.find(contentType);
-                    std::string extension;
-                    if (it != m.end())
-                    {
-                        extension = it->second;
-                    }
-                    else
-                    {
-                        std::cerr << "extension not found\n";
-                        break;
-                    }
-                    std::string fileName = generateUniqueFilename();
-                    std::ofstream outFile((fileName + extension).c_str());
                     if (!body.empty() && transfer_encoding != "chunked")
                     {
-                            if (outFile.is_open()) 
+                        map m = read_file_extensions("fileExtensions");
+                        map::iterator it;
+                        it = m.find(contentType);
+                        std::string extension;
+                        if (it != m.end())
+                            extension = it->second;
+                        else
+                            std::cerr << "extension not found\n";
+                        std::string fileName = generateUniqueFilename();
+                        std::ofstream outFile((fileName + extension).c_str());
+                        if (outFile.is_open()) 
+                        {
+                            outFile << body; // Write body to file
+                            sum += body.size();
+                            // Read remaining body and write to file directly
+                            char buffer[1024];
+                            ssize_t readbyte = 0;
+                            // std::cout << content_length << std::endl;
+                            while (sum != atoi(content_length.c_str()))
                             {
-                                outFile << body; // Write body to file
-                                sum += body.size();
-                                // Read remaining body and write to file directly
-                                char buffer[1024];
-                                ssize_t readbyte = 0;
-                                // std::cout << content_length << std::endl;
-                                while (sum != atoi(content_length.c_str()))
-                                {
-                                    readbyte = read(events[i].data.fd, buffer, 1024);
-                                    sum += readbyte;
-                                    outFile.write(buffer, readbyte);
-                                }
-                                outFile.close();
-                                j = 1;
+                                readbyte = read(events[i].data.fd, buffer, 1024);
+                                sum += readbyte;
+                                outFile.write(buffer, readbyte);
                             }
-                            else
-                                std::cerr << "Error opening file for appending." << std::endl;
+                            outFile.close();
+                            j = 1;
+                        }
+                        else
+                            std::cerr << "Error opening file for appending." << std::endl;
                     }
                     else if (!body.empty() && transfer_encoding == "chunked")
                     {
-                        
+                        std::cout << "chunked\n";
                     }
                     else
                         std::cerr << "Error reading request." << std::endl;
