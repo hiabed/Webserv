@@ -2,7 +2,7 @@
 
 std::string parse_header(std::string buffer, std::string &content_type, std::string &content_length, std::string &transfer_encoding)
 {
-    std::cout << buffer << std::endl;
+    // std::cout << buffer << std::endl;
     std::istringstream stream (buffer);
     std::string token;
     content_type = "Content-Type";

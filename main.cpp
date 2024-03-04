@@ -89,21 +89,27 @@ void multiplexing()
                     std::string content_length;
                     std::string transfer_encoding;
                     std::string body = readUntilSeparator(events[i].data.fd, contentType, content_length, transfer_encoding);
+                    map m = read_file_extensions("fileExtensions");
+                    map::iterator it;
+                    it = m.find(contentType);
+                    std::string extension;
+                    if (it != m.end())
+                    {
+                        extension = it->second;
+                    }
+                    else
+                    {
+                        std::cerr << "extension not found\n";
+                        break;
+                    }
+                    std::string fileName = generateUniqueFilename();
+                    std::ofstream outFile((fileName + extension).c_str());
                     if (!body.empty() && transfer_encoding != "chunked")
                     {
-                        map m = read_file_extensions("fileExtensions");
-                        map::iterator it;
-                        it = m.find(contentType);
-                        if (it != m.end()) 
-                        {
-                            std::string extension = it->second;
-                            // Append mode to append to existing file
-                            std::string fileName = generateUniqueFilename();
-                            std::ofstream outFile((fileName + extension).c_str());
                             if (outFile.is_open()) 
                             {
-                                sum += body.size();
                                 outFile << body; // Write body to file
+                                sum += body.size();
                                 // Read remaining body and write to file directly
                                 char buffer[1024];
                                 ssize_t readbyte = 0;
@@ -119,9 +125,6 @@ void multiplexing()
                             }
                             else
                                 std::cerr << "Error opening file for appending." << std::endl;
-                        }
-                        else
-                            std::cerr << "Content type not found in map." << std::endl;
                     }
                     else if (!body.empty() && transfer_encoding == "chunked")
                     {
