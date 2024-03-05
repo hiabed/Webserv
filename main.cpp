@@ -92,8 +92,7 @@ void multiplexing()
                     if (!body.empty() && transfer_encoding != "chunked")
                     {
                         map m = read_file_extensions("fileExtensions");
-                        map::iterator it;
-                        it = m.find(contentType);
+                        map::iterator it = m.find(contentType);
                         std::string extension;
                         if (it != m.end())
                             extension = it->second;
@@ -123,7 +122,21 @@ void multiplexing()
                     }
                     else if (!body.empty() && transfer_encoding == "chunked")
                     {
-                        std::cout << "chunked\n";
+                        map m = read_file_extensions("fileExtensions");
+                        map::iterator it = m.find(contentType);
+                        std::string extension;
+                        if (it != m.end())
+                            extension = it->second;
+                        else
+                            std::cerr << "extension not found\n";
+                        std::string fileName = generateUniqueFilename();
+                        std::ofstream outFile((fileName + extension).c_str());
+                        if (outFile.is_open()) 
+                        {
+                            
+                        }
+                        else
+                            std::cerr << "Error opening file for appending." << std::endl;
                     }
                     else
                         std::cerr << "Error reading request." << std::endl;

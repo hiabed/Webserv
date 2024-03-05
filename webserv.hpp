@@ -19,7 +19,6 @@
 
 typedef std::map<std::string, std::string> map;
 
-char** my_split(const char *str, char delim);
 std::string generateUniqueFilename();
 void print_keyVal(map m);
 map read_file_extensions(const char *filename);

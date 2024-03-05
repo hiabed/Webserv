@@ -5,7 +5,8 @@ map read_file_extensions(const char *filename)
     map extensions;
     std::ifstream file(filename);
     std::string line;
-    char **pair;
+    std::string key;
+    std::string value;
     if (!file.is_open())
     {
         std::cerr << "Error: Unable to open file " << filename << std::endl;
@@ -13,8 +14,9 @@ map read_file_extensions(const char *filename)
     }
     while (getline(file, line)) 
     {
-        pair = my_split(line.c_str(), ':');
-        extensions[pair[0]] = pair[1];
+        key = line.substr(0, line.find(":"));
+        value = line.substr(line.find(":") + 1);
+        extensions[key] = value;
     }
     file.close();
     return extensions;
