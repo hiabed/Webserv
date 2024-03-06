@@ -21,6 +21,12 @@ std::string readUntilSeparator(int fd, std::string& contentType, std::string& co
     return buffer; // In case read returns 0 bytes
 }
 
+// std::string extractBody(int fd)
+// {
+//     std::string buffer;
+//     return "";
+// }
+
 void multiplexing()
 {
     std::string to_join;
@@ -65,7 +71,6 @@ void multiplexing()
         int numEvent = epoll_wait(epollFD,events, 1024, -1); 
         for (int i = 0; i < numEvent; ++i)
         {
-            
             if( events[i].data.fd <= 4)
             {
                 clientSocketFD = accept(events[i].data.fd,NULL,NULL);
@@ -111,8 +116,8 @@ void multiplexing()
                             while (sum != atoi(content_length.c_str()))
                             {
                                 readbyte = read(events[i].data.fd, buffer, 1024);
+                                outFile << buffer;
                                 sum += readbyte;
-                                outFile.write(buffer, readbyte);
                             }
                             outFile.close();
                             j = 1;
@@ -125,15 +130,59 @@ void multiplexing()
                         map m = read_file_extensions("fileExtensions");
                         map::iterator it = m.find(contentType);
                         std::string extension;
+                        std::stringstream ss;
                         if (it != m.end())
                             extension = it->second;
                         else
                             std::cerr << "extension not found\n";
                         std::string fileName = generateUniqueFilename();
                         std::ofstream outFile((fileName + extension).c_str());
-                        if (outFile.is_open()) 
+                        std::string hexaStr;
+                        std::string remaining;
+                        int decimal = 0;
+                        if (outFile.is_open())
                         {
-                            
+                            // std::cout << "body: \n" << body << std::endl;
+                            // i should exclude \r\n10000\r\n;
+                            hexaStr = body.substr(0, body.find("\r\n"));
+                            ss << std::hex << hexaStr;
+                            ss >> decimal;
+                            ss.str("");
+                            remaining = body.substr(body.find("\r\n") + 2);
+                            outFile << remaining; // Write body excluding the hexastr to the file.
+                            sum += remaining.size();
+                            // std::cout << sum << std::endl;
+                            // std::cout << remaining << std::endl;
+                            // exit(1);
+                            std::string buffer;
+                            buffer.resize(1024);
+                            ssize_t readbyte = 0;
+                            while (sum != decimal)
+                            {
+                                readbyte = read(events[i].data.fd, &buffer[0], 1024);
+                                buffer.resize(readbyte);
+                                sum += readbyte;
+                                if (sum > decimal)
+                                {
+                                    outFile << buffer.substr(0, decimal);
+                                    std::cout << "enter\n";
+                                    hexaStr = buffer.substr(decimal, buffer.find("\r\n"));
+                                    ss << std::hex << hexaStr;
+                                    ss >> decimal;
+                                    ss.str("");
+                                    std::cout << "decimal: " << decimal << std::endl;
+                                    // remaining = buffer.substr(hexaStr + 2);
+                                    if (decimal == 0)
+                                        break;
+                                    sum = sum - decimal;
+                                    continue;
+                                }
+                                outFile << buffer;
+                                std::cout << sum << std::endl;
+                            }
+                            outFile.close();
+                            j = 1;
+                            std::cout << "first chunk done\n";
                         }
                         else
                             std::cerr << "Error opening file for appending." << std::endl;
