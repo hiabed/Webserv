@@ -107,17 +107,15 @@ void multiplexing()
                         std::ofstream outFile((fileName + extension).c_str());
                         if (outFile.is_open()) 
                         {
-                            outFile << body; // Write body to file
-                            sum += body.size();
-                            // Read remaining body and write to file directly
-                            char buffer[1024];
                             ssize_t readbyte = 0;
-                            // std::cout << content_length << std::endl;
+                            outFile << body;
+                            sum += body.size();
                             while (sum != atoi(content_length.c_str()))
                             {
-                                readbyte = read(events[i].data.fd, buffer, 1024);
-                                outFile << buffer;
-                                sum += readbyte;
+                                readbyte = read(events[i].data.fd, &body[0], 1024);
+                                outFile << body; // Write body to file
+                                body.resize(readbyte);
+                                sum += body.size();
                             }
                             outFile.close();
                             j = 1;
@@ -142,39 +140,39 @@ void multiplexing()
                         int decimal = 0;
                         if (outFile.is_open())
                         {
-                            // std::cout << "body: \n" << body << std::endl;
-                            // i should exclude \r\n10000\r\n;
+                            // std::cout << body << std::endl;
                             hexaStr = body.substr(0, body.find("\r\n"));
                             ss << std::hex << hexaStr;
                             ss >> decimal;
+                            // std::cout << "first : " << decimal << std::endl;
                             ss.str("");
                             remaining = body.substr(body.find("\r\n") + 2);
                             outFile << remaining; // Write body excluding the hexastr to the file.
                             sum += remaining.size();
-                            // std::cout << sum << std::endl;
-                            // std::cout << remaining << std::endl;
-                            // exit(1);
                             std::string buffer;
                             buffer.resize(1024);
                             ssize_t readbyte = 0;
-                            while (sum != decimal)
+                            int remain = 0;
+                            while (sum < decimal)
                             {
                                 readbyte = read(events[i].data.fd, &buffer[0], 1024);
                                 buffer.resize(readbyte);
                                 sum += readbyte;
                                 if (sum > decimal)
                                 {
-                                    outFile << buffer.substr(0, decimal);
-                                    std::cout << "enter\n";
-                                    hexaStr = buffer.substr(decimal, buffer.find("\r\n"));
-                                    ss << std::hex << hexaStr;
-                                    ss >> decimal;
-                                    ss.str("");
+                                    remain = sum - decimal;
                                     std::cout << "decimal: " << decimal << std::endl;
-                                    // remaining = buffer.substr(hexaStr + 2);
-                                    if (decimal == 0)
+                                    std::cout << "sum: " << sum << std::endl;
+                                    if (buffer.find("0\r\n\r\n") != std::string::npos)
+                                    {
+                                        outFile << buffer.substr(0, buffer.find("\r\n0\r\n\r\n"));
+                                        std::cout << "here\n";
                                         break;
-                                    sum = sum - decimal;
+                                    }
+                                    else
+                                    {
+                                    }
+                                    // std::cout << "sum\n" << sum;
                                     continue;
                                 }
                                 outFile << buffer;
@@ -182,7 +180,7 @@ void multiplexing()
                             }
                             outFile.close();
                             j = 1;
-                            std::cout << "first chunk done\n";
+                            std::cout << "done\n";
                         }
                         else
                             std::cerr << "Error opening file for appending." << std::endl;
