@@ -1,6 +1,6 @@
 #include "webserv.hpp"
 
-std::string parse_header(std::string buffer, std::string &content_type, std::string &content_length, std::string &transfer_encoding)
+void parse_header(std::string buffer, std::string &content_type, std::string &content_length, std::string &transfer_encoding)
 {
     // std::cout << buffer << std::endl;
     std::istringstream stream (buffer);
@@ -22,5 +22,4 @@ std::string parse_header(std::string buffer, std::string &content_type, std::str
         else if (is_chunked == transfer_encoding)
             transfer_encoding = line.substr(19);
     }
-    return "";
 }

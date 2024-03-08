@@ -22,7 +22,9 @@ typedef std::map<std::string, std::string> map;
 std::string generateUniqueFilename();
 void print_keyVal(map m);
 map read_file_extensions(const char *filename);
-std::string parse_header(std::string to_join, std::string &content_type, std::string &content_length, std::string &transfer_encoding);
-void PutBodyInFile(std::string to_join, std::string extension);
+void parse_header(std::string buffer, std::string &content_type, std::string &content_length, std::string &transfer_encoding);
+void PutBodyInFile(std::string buffer, std::string extension);
+bool post_method(std::string buffer);
+std::string readUntilSeparator(std::string buffer);
 
 #endif
