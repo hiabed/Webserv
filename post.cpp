@@ -8,7 +8,6 @@ std::string content_length;
 std::string transfer_encoding;
 std::string extension;
 ssize_t sum = 0;
-int count = 0;
 
 bool post_method(std::string buffer)
 {
@@ -19,7 +18,6 @@ bool post_method(std::string buffer)
     }
     if (flag == 0)
     {
-        std::cout << "content_length: " << content_length << std::endl;
         map m = read_file_extensions("fileExtensions");
         map::iterator it = m.find(contentType);
         if (it != m.end())
