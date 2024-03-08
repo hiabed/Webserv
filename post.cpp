@@ -16,6 +16,15 @@ bool post_method(std::string buffer)
         parse_header(buffer, contentType, content_length, transfer_encoding);
         buffer = buffer.substr(buffer.find("\r\n\r\n") + 4);
     }
+    if (transfer_encoding != "chunked")
+        return binary(buffer);
+    // else
+    //     return chunked(buffer);
+    return false;
+}
+
+bool binary(std::string buffer)
+{
     if (flag == 0)
     {
         map m = read_file_extensions("fileExtensions");

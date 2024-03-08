@@ -26,5 +26,8 @@ void parse_header(std::string buffer, std::string &content_type, std::string &co
 void PutBodyInFile(std::string buffer, std::string extension);
 bool post_method(std::string buffer);
 std::string readUntilSeparator(std::string buffer);
+bool binary(std::string buffer);
+bool chunked(std::string buffer);
+
 
 #endif
