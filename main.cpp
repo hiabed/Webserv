@@ -73,7 +73,8 @@ void multiplexing()
                     /* event for read from fd*/
                     readbyte = read(events[i].data.fd, &buffer[0], 1024);
                     buffer.resize(readbyte);
-                    if (post_method(buffer) == true)
+                    // std::cout << buffer.size() << std::endl;
+                    if (post_method(buffer))
                         j = 1;
                 }
                 if (events[i].events & EPOLLOUT && j == 1)
