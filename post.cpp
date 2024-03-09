@@ -43,8 +43,8 @@ bool post_method(std::string buffer)
 {
     if (buffer.find("\r\n\r\n") != std::string::npos && buffer.find("\r\n0\r\n\r\n") == std::string::npos)
     {
-        open_unic_file();
         parse_header(buffer, contentType, content_length, transfer_encoding);
+        open_unic_file();
         buffer = buffer.substr(buffer.find("\r\n\r\n") + 4);
         f = 0;
     }
