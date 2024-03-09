@@ -25,28 +25,23 @@ int f = 0;
 
 void open_unic_file()
 {
-    if (flag == 0)
-    {
-        map m = read_file_extensions("fileExtensions");
-        map::iterator it = m.find(contentType);
-        if (it != m.end())
-            extension = it->second;
-        else
-            std::cerr << "extension not found\n";
-        fileName = generateUniqueFilename();
-        outFile.open((fileName + extension).c_str());
-        flag = 1;
-    }
+    map m = read_file_extensions("fileExtensions");
+    map::iterator it = m.find(contentType);
+    if (it != m.end())
+        extension = it->second;
+    else
+        std::cerr << "extension not found\n";
+    fileName = generateUniqueFilename();
+    outFile.open((fileName + extension).c_str());
 }
 
 bool post_method(std::string buffer)
 {
-    if (buffer.find("\r\n\r\n") != std::string::npos && buffer.find("\r\n0\r\n\r\n") == std::string::npos)
+    if (buffer.find("\r\n\r\n") != std::string::npos && f == 0)
     {
         parse_header(buffer, contentType, content_length, transfer_encoding);
         open_unic_file();
         buffer = buffer.substr(buffer.find("\r\n\r\n") + 4);
-        f = 0;
     }
     if (transfer_encoding != "chunked")
         return binary(buffer);
@@ -90,6 +85,8 @@ bool chunked(std::string buffer)
             std::cout << "here\n";
             outFile << buffer.substr(0, buffer.find("\r\n0\r\n\r\n"));
             outFile.close();
+            f = 0;
+            body_size = 0;
             return true;
         }
         outFile << buffer;

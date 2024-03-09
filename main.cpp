@@ -71,9 +71,13 @@ void multiplexing()
                 if (events[i].events & EPOLLIN)
                 {
                     /* event for read from fd*/
-                    readbyte = read(events[i].data.fd, &buffer[0], 1024);
+                    readbyte = recv(events[i].data.fd, &buffer[0], 1024, 0);
+                    if (readbyte == -1)
+                    {
+                        std::cerr << "read function failed to read from the socket file descriptor\n";
+                        exit(EXIT_FAILURE);
+                    }
                     buffer.resize(readbyte);
-                    // std::cout << buffer.size() << std::endl;
                     if (post_method(buffer))
                         j = 1;
                 }
