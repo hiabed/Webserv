@@ -52,9 +52,9 @@ bool post_method(std::string buffer)
 
 std::string keep_the_remaining(std::string buffer)
 {
-    size_t pos = buffer.find("\r\n", buffer.find("\r\n") + 2);
     outFile << buffer.substr(0, buffer.find("\r\n"));
     // current chunk done;
+    size_t pos = buffer.find("\r\n", buffer.find("\r\n") + 2); //buffer.find("\r\n") + 2 is the position to look up from for \r\n;
     hexa = buffer.substr(buffer.find("\r\n") + 2, pos);
     ss << std::hex << hexa;
     ss >> chunk_length;
