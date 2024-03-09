@@ -82,7 +82,6 @@ bool chunked(std::string buffer)
         }
         if (chunk_length == 0 || buffer.find("\r\n0\r\n\r\n") != std::string::npos)
         {
-            std::cout << "here\n";
             outFile << buffer.substr(0, buffer.find("\r\n0\r\n\r\n"));
             outFile.close();
             f = 0;
@@ -92,7 +91,7 @@ bool chunked(std::string buffer)
         outFile << buffer;
     }
     else
-        std::cerr << "Error opening file for appending." << std::endl;
+        std::cerr << "Error opening file for appending.\n";
     return false;
 }
 

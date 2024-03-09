@@ -71,6 +71,8 @@ void multiplexing()
                 if (events[i].events & EPOLLIN)
                 {
                     /* event for read from fd*/
+                    buffer.clear();
+                    buffer.resize(1024);
                     readbyte = recv(events[i].data.fd, &buffer[0], 1024, 0);
                     if (readbyte == -1)
                     {
