@@ -71,15 +71,16 @@ void multiplexing()
                 {
                     /* event for read from fd*/
                     // buffer.clear();
-                    buffer.resize(1024);
-                    readbyte = recv(events[i].data.fd, &buffer[0], 1024, 0);
+                    char buffer[1024];
+                    bzero(buffer, sizeof(buffer));
+                    readbyte = recv(events[i].data.fd, buffer, 1024, 0);
                     if (readbyte == -1)
                     {
                         std::cerr << "read function failed to read from the socket file descriptor\n";
                         exit(EXIT_FAILURE);
                     }
-                    buffer.resize(readbyte);
-                    if (post_method(buffer))
+                    //buffer.resize(readbyte);
+                    if (post_method(std::string("").append(buffer,readbyte)))
                         j = 1;
                 }
                 if (events[i].events & EPOLLOUT && j == 1)

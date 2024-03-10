@@ -15,10 +15,10 @@ std::string transfer_encoding;
 ssize_t body_size = 0;
 
 //for chunked;
+size_t chunk_length = 0;
 std::stringstream ss;
-int chunk_length;
 std::string hexa;
-std::string remain;
+std::string concat;
 int f = 0;
 
 // for debugging;
@@ -51,18 +51,17 @@ bool post_method(std::string buffer)
     return false;
 }
 
-std::string switch_to_hexa(std::string remain)
+std::string remove_hexa(std::string remain)
 {
     hexa = remain.substr(0, remain.find("\r\n"));
     ss << std::hex << hexa;
     ss >> chunk_length;
     ss.str("");
-    if (hexa == "10000")
-        count++;
+    ss.clear();
     std::cout << hexa << std::endl;
-    std::cout << count << std::endl;
-    usleep(500000);
-    return remain.substr(remain.find("\r\n") + 2); // return only the remaining part of the body without hexa\r\n;
+    std::cout << chunk_length << std::endl;
+    usleep(100000); // just for debugging;
+    return remain.substr(remain.find("\r\n") + 2);
 }
 
 bool chunked(std::string buffer)
@@ -71,21 +70,22 @@ bool chunked(std::string buffer)
     {
         if (f == 0)
         {
-            buffer = switch_to_hexa(buffer);
+            concat = remove_hexa(buffer);
             f = 1;
+            return false;
         }
-        remain += buffer; //add the buffer to the reamin (remaining);
-        if (remain.find("\r\n") != std::string::npos && remain.find("\r\n", remain.find("\r\n") + 2) != std::string::npos)
+        concat += buffer; //add the buffer to the reamin (remaining);
+        if (concat.find("\r\n", concat.find("\r\n") + 2) != std::string::npos && concat.size() > chunk_length)
         {
-            outFile << remain.substr(0, remain.find("\r\n"));
-            if (remain.find("\r\n0\r\n\r\n") != std::string::npos)
+            outFile << concat.substr(0, concat.find("\r\n"));
+            if (concat.find("\r\n0\r\n\r\n") != std::string::npos)
             {
                 std::cout << "done.\n";
                 outFile.close();
                 f = 0;
                 return true;
             }
-            remain = switch_to_hexa(remain.substr(remain.find("\r\n") + 2));
+            concat = remove_hexa(concat.substr(concat.find("\r\n") + 2));
             // keep only the body part without hexa\r\n;
         }
     }
