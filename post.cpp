@@ -21,9 +21,6 @@ std::string hexa;
 std::string concat;
 int f = 0;
 
-// for debugging;
-int count = 0;
-
 void open_unic_file(std::string contentType)
 {
     map m = read_file_extensions("fileExtensions");
@@ -58,9 +55,6 @@ std::string remove_hexa(std::string remain)
     ss >> chunk_length;
     ss.str("");
     ss.clear();
-    std::cout << hexa << std::endl;
-    std::cout << chunk_length << std::endl;
-    usleep(100000); // just for debugging;
     return remain.substr(remain.find("\r\n") + 2);
 }
 
@@ -74,10 +68,10 @@ bool chunked(std::string buffer)
             f = 1;
             return false;
         }
-        concat += buffer; //add the buffer to the reamin (remaining);
+        concat += buffer;
         if (concat.find("\r\n", concat.find("\r\n") + 2) != std::string::npos && concat.size() > chunk_length)
         {
-            outFile << concat.substr(0, concat.find("\r\n"));
+            outFile << concat.substr(0, chunk_length);
             if (concat.find("\r\n0\r\n\r\n") != std::string::npos)
             {
                 std::cout << "done.\n";
@@ -85,7 +79,7 @@ bool chunked(std::string buffer)
                 f = 0;
                 return true;
             }
-            concat = remove_hexa(concat.substr(concat.find("\r\n") + 2));
+            concat = remove_hexa(concat.substr(chunk_length + 2));
             // keep only the body part without hexa\r\n;
         }
     }
