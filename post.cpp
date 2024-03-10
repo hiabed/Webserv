@@ -50,15 +50,23 @@ bool post_method(std::string buffer)
     return false;
 }
 
+std::string switch_to_hexa(std::string buffer)
+{
+    hexa = buffer.substr(0, buffer.find("\r\n"));
+    ss << std::hex << hexa;
+    ss >> chunk_length;
+    ss.str("");
+    std::cout << hexa << std::endl;
+    return buffer.substr(buffer.find("\r\n") + 2);
+}
+
 std::string keep_the_remaining(std::string buffer)
 {
     outFile << buffer.substr(0, buffer.find("\r\n"));
+    // change buffer value;
+    buffer = buffer.substr(buffer.find("\r\n") + 2); // hexa\r;
     // current chunk done;
-    size_t pos = buffer.find("\r\n", buffer.find("\r\n") + 2); //buffer.find("\r\n") + 2 is the position to look up from for \r\n;
-    hexa = buffer.substr(buffer.find("\r\n") + 2, pos);
-    ss << std::hex << hexa;
-    ss >> chunk_length;
-    return buffer.substr(pos + 2);
+    return switch_to_hexa(buffer);
 }
 
 bool chunked(std::string buffer)
@@ -67,11 +75,8 @@ bool chunked(std::string buffer)
     {
         if (f == 0)
         {
-            hexa = buffer.substr(0, buffer.find("\r\n"));
-            ss << std::hex << hexa;
-            ss >> chunk_length;
-            ss.str("");
-            buffer = buffer.substr(buffer.find("\r\n") + 2);
+            // if (buffer.find("\r\n") != std::string::npos)
+            buffer = switch_to_hexa(buffer);
             f = 1;
         }
         body_size += buffer.size();
@@ -89,6 +94,7 @@ bool chunked(std::string buffer)
             return true;
         }
         outFile << buffer;
+        buffer.clear();
     }
     else
         std::cerr << "Error opening file for appending.\n";
