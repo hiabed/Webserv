@@ -96,7 +96,7 @@ bool chunked(std::string buffer)
         dd = 1;
     }
     else
-        std::cerr << "Error opening file for appending.\n";
+        std::cerr << "Error opening file.\n";
     return false;
 }
 
@@ -115,6 +115,6 @@ bool binary(std::string buffer)
         }
     }
     else
-        std::cerr << "Error opening file for appending." << std::endl;
+        std::cerr << "Error opening file." << std::endl;
     return false;
 }
