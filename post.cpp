@@ -65,13 +65,6 @@ bool chunked(std::string buffer)
     if (outFile.is_open())
     {
         concat += buffer;
-        if (concat.length() >= (chunk_length + 9))
-        {
-            std::cout << chunk_length << std::endl;
-            outFile << concat.substr(0, chunk_length);
-            concat = concat.substr(chunk_length + 2);
-            parse_hexa(concat); // here is the problem if he cant find the 
-        }
         if (concat.find("\r\n0\r\n\r\n") != std::string::npos)
         {
             std::cout << "done.\n";
@@ -80,6 +73,13 @@ bool chunked(std::string buffer)
             f = 0;
             concat.clear();
             return true;
+        }
+        if (concat.length() >= (chunk_length + 9))
+        {
+            std::cout << chunk_length << std::endl;
+            outFile << concat.substr(0, chunk_length);
+            concat = concat.substr(chunk_length + 2);
+            parse_hexa(concat); // here was the problem if he cant find the hexa inside "\r\n10000\r\n"
         }
     }
     else
