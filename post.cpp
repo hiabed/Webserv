@@ -61,18 +61,15 @@ std::string parse_hexa(std::string remain) // parse the hexadecimal and return t
 
 int dd = 0;
 
-size_t convert(std::string& buffer)
+void convert(std::string& buffer)
 {
     std::stringstream ss;
-    size_t con;
     if (dd != 0)
         buffer = buffer.substr(2);
-    // std::cout << buffer.substr(0, buffer.find("\r\n")) << std::endl;
     ss <<std::hex << buffer.substr(0, buffer.find("\r\n"));
+    ss >> chunk_length;
     buffer = buffer.substr(buffer.find("\r\n") + 2);
-    ss >> con;
     ss.str("");
-    return con;
 }   
 
 bool chunked(std::string buffer)
@@ -82,17 +79,7 @@ bool chunked(std::string buffer)
         f = 1;
         concat += buffer;
         if (!chunk_length)
-        {
-            chunk_length = convert(concat);
-            dd = 1;
-            if (!chunk_length)
-            {
-                outFile.close();
-                std::cout << "done.\n";
-                f = 0;
-                // return (true);
-            }
-        }
+            convert(concat);
         else if (chunk_length <= concat.length() && chunk_length)
         {
             outFile << concat.substr(0, chunk_length);
@@ -101,10 +88,12 @@ bool chunked(std::string buffer)
             if (concat.find("\r\n\r\n") != std::string::npos)
             {
                 chunked("");
+                outFile.close();
+                f = 0;
                 return true;
             }
-            // std::cout <<concat.substr(0, concat.rfind("\r\n")) << std::endl;
         }
+        dd = 1;
     }
     else
         std::cerr << "Error opening file for appending.\n";
