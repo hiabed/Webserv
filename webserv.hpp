@@ -29,6 +29,6 @@ std::string readUntilSeparator(std::string buffer);
 bool binary(std::string buffer);
 bool chunked(std::string buffer);
 void open_unic_file(std::string contentType);
-std::string parse_hexa(std::string remain);
+void parse_hexa(std::string &remain);
 
 #endif

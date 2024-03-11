@@ -33,6 +33,8 @@ void open_unic_file(std::string contentType)
     outFile.open((fileName + extension).c_str());
 }
 
+int flag = 0;
+
 bool post_method(std::string buffer)
 {
     if (buffer.find("\r\n\r\n") != std::string::npos && f == 0)
@@ -40,6 +42,8 @@ bool post_method(std::string buffer)
         parse_header(buffer, contentType, content_length, transfer_encoding);
         open_unic_file(contentType);
         buffer = buffer.substr(buffer.find("\r\n\r\n") + 4);
+        parse_hexa(buffer);
+        f = 1;
     }
     if (transfer_encoding != "chunked")
         return binary(buffer);
@@ -48,52 +52,35 @@ bool post_method(std::string buffer)
     return false;
 }
 
-int cout = 0;
-
-std::string parse_hexa(std::string remain) // parse the hexadecimal and return the remaining.
+void parse_hexa(std::string &remain)
 {
     ss << std::hex << remain.substr(0, remain.find("\r\n"));
     ss >> chunk_length;
     ss.str("");
-    ss.clear();
-    return remain.substr(remain.find("\r\n") + 2);
+    remain = remain.substr(remain.find("\r\n") + 2); // the remaining body after hexa\r\n. if after hexa is \r\n\r\n it means that "\r\n0\r\n\r\n".
 }
-
-int dd = 0;
-
-void convert(std::string& buffer)
-{
-    std::stringstream ss;
-    if (dd != 0)
-        buffer = buffer.substr(2);
-    ss <<std::hex << buffer.substr(0, buffer.find("\r\n"));
-    ss >> chunk_length;
-    buffer = buffer.substr(buffer.find("\r\n") + 2);
-    ss.str("");
-}   
 
 bool chunked(std::string buffer)
 {
     if (outFile.is_open())
     {
-        f = 1;
         concat += buffer;
-        if (!chunk_length)
-            convert(concat);
-        else if (chunk_length <= concat.length() && chunk_length)
+        if (concat.length() >= (chunk_length + 9))
         {
+            std::cout << chunk_length << std::endl;
             outFile << concat.substr(0, chunk_length);
-            concat = concat.substr(chunk_length);
-            chunk_length = 0;
-            if (concat.find("\r\n\r\n") != std::string::npos)
-            {
-                chunked("");
-                outFile.close();
-                f = 0;
-                return true;
-            }
+            concat = concat.substr(chunk_length + 2);
+            parse_hexa(concat); // here is the problem if he cant find the 
         }
-        dd = 1;
+        if (concat.find("\r\n0\r\n\r\n") != std::string::npos)
+        {
+            std::cout << "done.\n";
+            outFile << concat.substr(0, chunk_length);
+            outFile.close();
+            f = 0;
+            concat.clear();
+            return true;
+        }
     }
     else
         std::cerr << "Error opening file.\n";
@@ -115,6 +102,6 @@ bool binary(std::string buffer)
         }
     }
     else
-        std::cerr << "Error opening file." << std::endl;
+        std::cerr << "Error opening file.\n";
     return false;
 }
