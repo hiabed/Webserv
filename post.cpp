@@ -48,39 +48,58 @@ bool post_method(std::string buffer)
     return false;
 }
 
-std::string remove_hexa(std::string remain)
+int cout = 0;
+
+std::string parse_hexa(std::string remain) // parse the hexadecimal and return the remaining.
 {
-    hexa = remain.substr(0, remain.find("\r\n"));
-    ss << std::hex << hexa;
+    ss << std::hex << remain.substr(0, remain.find("\r\n"));
     ss >> chunk_length;
     ss.str("");
     ss.clear();
     return remain.substr(remain.find("\r\n") + 2);
 }
 
+int dd = 0;
+
+size_t convert(std::string& buffer)
+{
+    std::stringstream ss;
+    size_t con;
+    if (dd != 0)
+        buffer = buffer.substr(2);
+    // std::cout << buffer.substr(0, buffer.find("\r\n")) << std::endl;
+    ss <<std::hex << buffer.substr(0, buffer.find("\r\n"));
+    buffer = buffer.substr(buffer.find("\r\n") + 2);
+    ss >> con;
+    ss.str("");
+    return con;
+}   
+
 bool chunked(std::string buffer)
 {
     if (outFile.is_open())
     {
-        if (f == 0)
-        {
-            concat = remove_hexa(buffer);
-            f = 1;
-            return false;
-        }
+        f = 1;
         concat += buffer;
-        if (concat.find("\r\n", concat.find("\r\n") + 2) != std::string::npos && concat.size() > chunk_length)
+        if (!chunk_length)
+        {
+            std::cout <<concat.substr(0, concat.rfind("\r\n")) << "$" << std::endl;
+            chunk_length = convert(concat);
+            dd = 1;
+            if (!chunk_length)
+            {
+                outFile.close();
+                std::cout << "done.\n";
+                f = 0;
+                return (true);
+            }
+        }
+        else if (chunk_length <= concat.length() && chunk_length)
         {
             outFile << concat.substr(0, chunk_length);
-            if (concat.find("\r\n0\r\n\r\n") != std::string::npos)
-            {
-                std::cout << "done.\n";
-                outFile.close();
-                f = 0;
-                return true;
-            }
-            concat = remove_hexa(concat.substr(chunk_length + 2));
-            // keep only the body part without hexa\r\n;
+            concat = concat.substr(chunk_length);
+            chunk_length = 0;
+            // std::cout <<concat.substr(0, concat.rfind("\r\n")) << std::endl;
         }
     }
     else
