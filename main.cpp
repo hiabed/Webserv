@@ -81,7 +81,10 @@ void multiplexing()
                     }
                     //buffer.resize(readbyte);
                     if (post_method(std::string("").append(buffer,readbyte)))
+                    {
                         j = 1;
+                        std::cout << "j -->" << j << "$" << std::endl;
+                    }
                 }
                 if (events[i].events & EPOLLOUT && j == 1)
                 {

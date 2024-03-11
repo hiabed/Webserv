@@ -83,7 +83,6 @@ bool chunked(std::string buffer)
         concat += buffer;
         if (!chunk_length)
         {
-            std::cout <<concat.substr(0, concat.rfind("\r\n")) << "$" << std::endl;
             chunk_length = convert(concat);
             dd = 1;
             if (!chunk_length)
@@ -91,7 +90,7 @@ bool chunked(std::string buffer)
                 outFile.close();
                 std::cout << "done.\n";
                 f = 0;
-                return (true);
+                // return (true);
             }
         }
         else if (chunk_length <= concat.length() && chunk_length)
@@ -99,6 +98,11 @@ bool chunked(std::string buffer)
             outFile << concat.substr(0, chunk_length);
             concat = concat.substr(chunk_length);
             chunk_length = 0;
+            if (concat.find("\r\n\r\n") != std::string::npos)
+            {
+                chunked("");
+                return true;
+            }
             // std::cout <<concat.substr(0, concat.rfind("\r\n")) << std::endl;
         }
     }
