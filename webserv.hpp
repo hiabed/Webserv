@@ -30,5 +30,6 @@ bool binary(std::string buffer);
 bool chunked(std::string buffer);
 void open_unic_file(std::string contentType);
 void parse_hexa(std::string &remain);
+bool is_end_of_chunk();
 
 #endif

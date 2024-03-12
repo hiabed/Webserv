@@ -1,22 +1,18 @@
-temp = POST / HTTP/1.1
-User-Agent: PostmanRuntime/7.34.0
-Accept: */*
-Postman-Token: 12e4d6f7-f334-49f2-a773-f62282935d27
-Host: 127.0.0.1:8081
-Accept-Encoding: gzip, deflate, br
-Connection: keep-alive
-Content-Length: 996381
-Content-Type: image/jpeg
+temp = POST / HTTP/1.1\r\n
+User-Agent: PostmanRuntime/7.34.0\r\n
+Accept: */*\r\n
+Postman-Token: 12e4d6f7-f334-49f2-a773-f62282935d27\r\n
+Host: 127.0.0.1:8081\r\n
+Accept-Encoding: gzip, deflate, br\r\n
+Connection: keep-alive\r\n
+Content-Length: 996381\r\n
+Content-Type: image/jpeg\r\n
 
 POST /example HTTP/1.1\r\n
 Host: example.com\r\n
 Content-Type: text/plain\r\n
 Transfer-Encoding: chunked\r\n
 \r\n
-7\r\n
-hello\r\n
-6\r\n
- world\r\n
 0\r\n
 \r\n
 
