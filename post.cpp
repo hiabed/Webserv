@@ -54,15 +54,14 @@ bool post_method(std::string buffer)
         parse_header(buffer, contentType, content_length, transfer_encoding);
         open_unic_file(contentType.substr(0, contentType.find("\r\n")));
         buffer = buffer.substr(buffer.find("\r\n\r\n") + 4);
-        parse_hexa(buffer);
-        // if (chunk_length == 0)
-        //     return is_end_of_chunk();
+        if (transfer_encoding == "chunked")
+            parse_hexa(buffer);
         f = 1;
     }
-    if (transfer_encoding != "chunked")
-        return binary(buffer);
-    else
+    if (transfer_encoding == "chunked")
         return chunked(buffer);
+    else
+        return binary(buffer);
     return false;
 }
 
