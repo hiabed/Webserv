@@ -2,14 +2,6 @@
 
 // split leads to a heap-buffer-overflow;
 
-std::string readUntilSeparator(std::string buffer)
-{
-    size_t pos = buffer.find("\r\n\r\n");
-    if (pos != std::string::npos)
-        return buffer.substr(pos + 4); // Exclude the separator and header
-    return buffer;
-}
-
 void multiplexing()
 {
     // int count = 0;
