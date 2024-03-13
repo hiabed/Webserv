@@ -25,7 +25,6 @@ bool is_end_of_chunk()
 {
     if (concat.find("\r\n0\r\n\r\n") != std::string::npos || chunk_length == 0)
     {
-        std::cout << "done.\n";
         outFile << concat.substr(0, concat.find("\r\n0\r\n\r\n"));
         outFile.close();
         concat.clear();
@@ -82,7 +81,7 @@ bool chunked(std::string buffer)
         {
             outFile << concat.substr(0, chunk_length);
             concat = concat.substr(chunk_length + 2);
-            parse_hexa(concat); // here was the problem if he cant find the hexa inside "\r\n10000\r\n"
+            parse_hexa(concat);
         }
         return is_end_of_chunk();
     }

@@ -1,10 +1,7 @@
 #include "webserv.hpp"
 
-// split leads to a heap-buffer-overflow;
-
 void multiplexing()
 {
-    // int count = 0;
     int serverSocketFD ;
     int epollFD = epoll_create(5);
     epoll_event event;
@@ -76,7 +73,7 @@ void multiplexing()
                 if (events[i].events & EPOLLOUT && j == 1)
                 {
                     // std::cout << "\n\n========== Enter here ============\n\n";
-                    /*event for write to client  */
+                    /*event to write for client  */
                     std::string response = "HTTP/1.1 201 OK\r\nContent-Type: text/html\r\n\r\nhello";
                     if (send(events[i].data.fd,response.c_str(), response.length(), 0) == - 1)
                         std::cout << "=====here=====\n";
