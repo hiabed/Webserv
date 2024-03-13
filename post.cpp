@@ -27,6 +27,7 @@ bool is_end_of_chunk()
     {
         outFile << concat.substr(0, concat.find("\r\n0\r\n\r\n"));
         outFile.close();
+        outFile.clear();
         concat.clear();
         f = 0;
         return true;
@@ -77,7 +78,7 @@ bool chunked(std::string buffer)
     if (outFile.is_open())
     {
         concat += buffer;
-        if (concat.length() >= (chunk_length + 9) && concat.find("\r\n", concat.find("\r\n") + 2) != std::string::npos)
+        if (concat.length() >= (chunk_length + 9))
         {
             outFile << concat.substr(0, chunk_length);
             concat = concat.substr(chunk_length + 2);
