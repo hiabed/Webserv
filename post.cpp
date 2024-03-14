@@ -100,6 +100,7 @@ bool binary(std::string buffer)
         if (body_size == atoi(content_length.c_str()))
         {
             outFile.close();
+            buffer.clear();
             body_size = 0;
             f = 0;
             return true;
