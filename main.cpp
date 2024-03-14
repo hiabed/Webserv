@@ -37,6 +37,7 @@ void multiplexing()
     ssize_t readbyte = 0;
     while (1)
     {
+        post test;
         int clientSocketFD;
         int numEvent = epoll_wait(epollFD,events, 1024, -1);
         for (int i = 0; i < numEvent; ++i)
@@ -67,7 +68,7 @@ void multiplexing()
                         exit(EXIT_FAILURE);
                     }
                     buffer.resize(readbyte);
-                    if (post_method(buffer))
+                    if (test.post_method(buffer))
                         j = 1;
                 }
                 if (events[i].events & EPOLLOUT && j == 1)

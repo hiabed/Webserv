@@ -1,6 +1,6 @@
 #include "webserv.hpp"
 
-void print_keyVal(map m)
+void post::print_keyVal(map m)
 {
     map::iterator it = m.begin();
     while (it != m.end())
@@ -11,7 +11,7 @@ void print_keyVal(map m)
     std::cout << "\n";
 }
 
-std::string generateUniqueFilename()
+std::string post::generateUniqueFilename()
 {
     struct timeval tv;
     gettimeofday(&tv, NULL);

@@ -1,6 +1,6 @@
 #include "webserv.hpp"
 
-void parse_header(std::string buffer, std::string &content_type, std::string &content_length, std::string &transfer_encoding)
+void post::parse_header(std::string buffer, std::string &content_type, std::string &content_length, std::string &transfer_encoding)
 {
     std::istringstream stream (buffer);
     std::string line;

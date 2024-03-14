@@ -1,6 +1,6 @@
 #include "webserv.hpp"
 
-void PutBodyInFile(std::string to_join, std::string extension)
+void post::PutBodyInFile(std::string to_join, std::string extension)
 {
     std::string header = to_join;
     std::string body;

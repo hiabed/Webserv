@@ -17,11 +17,17 @@
 
 #define PORT 8081
 
+typedef std::map<std::string, std::string> map;
+
 class post
 {
 private:
     // some variables if needed;
 public:
+	post();
+	post(const post &other);
+	post &operator=(const post &other);
+	~post();
     std::string generateUniqueFilename();
     void print_keyVal(map m);
     map read_file_extensions(const char *filename);
@@ -34,19 +40,5 @@ public:
     void parse_hexa(std::string &remain);
     bool is_end_of_chunk();
 };
-
-typedef std::map<std::string, std::string> map;
-
-std::string generateUniqueFilename();
-void print_keyVal(map m);
-map read_file_extensions(const char *filename);
-void parse_header(std::string buffer, std::string &content_type, std::string &content_length, std::string &transfer_encoding);
-void PutBodyInFile(std::string buffer, std::string extension);
-bool post_method(std::string buffer);
-bool binary(std::string buffer);
-bool chunked(std::string buffer);
-void open_unic_file(std::string contentType);
-void parse_hexa(std::string &remain);
-bool is_end_of_chunk();
 
 #endif

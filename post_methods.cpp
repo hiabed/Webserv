@@ -1,5 +1,32 @@
 #include "webserv.hpp"
 
+post::post()
+{
+    // std::cout << "Default constructor called\n";
+    // post_point = 0;
+}
+
+post::post(const post &other)
+{
+    // post_point = 0;
+    // std::cout << "Copy constructor called\n";
+    *this = other;
+}
+
+post& post::operator=(const post &other)
+{
+    (void)other;
+    // std::cout << "Copy assignment operator called\n";
+    // if (this != &other)
+    //     post_point = other.getRawBits();
+    return *this;
+}
+
+post::~post()
+{
+    // std::cout << "Destructor called\n";
+}
+
 /*-- My Global variables --*/
 
 std::string fileName;
@@ -21,7 +48,7 @@ std::string hexa;
 std::string concat;
 int f = 0;
 
-bool is_end_of_chunk()
+bool post::is_end_of_chunk()
 {
     if (concat.find("\r\n0\r\n\r\n") != std::string::npos || chunk_length == 0)
     {
@@ -35,7 +62,7 @@ bool is_end_of_chunk()
     return false;
 }
 
-void open_unic_file(std::string contentType)
+void post::open_unic_file(std::string contentType)
 {
     map m = read_file_extensions("fileExtensions");
     map::iterator it = m.find(contentType);
@@ -47,7 +74,7 @@ void open_unic_file(std::string contentType)
     outFile.open((fileName + extension).c_str());
 }
 
-bool post_method(std::string buffer)
+bool post::post_method(std::string buffer)
 {
     if (buffer.find("\r\n\r\n") != std::string::npos && f == 0)
     {
@@ -65,7 +92,7 @@ bool post_method(std::string buffer)
     return false;
 }
 
-void parse_hexa(std::string &remain)
+void post::parse_hexa(std::string &remain)
 {
     ss << std::hex << remain.substr(0, remain.find("\r\n"));
     ss >> chunk_length;
@@ -73,7 +100,7 @@ void parse_hexa(std::string &remain)
     remain = remain.substr(remain.find("\r\n") + 2); // the remaining body after hexa\r\n. if after hexa is \r\n it means that "\r\n0\r\n\r\n".
 }
 
-bool chunked(std::string buffer)
+bool post::chunked(std::string buffer)
 {
     if (outFile.is_open())
     {
@@ -91,7 +118,7 @@ bool chunked(std::string buffer)
     return false;
 }
 
-bool binary(std::string buffer)
+bool post::binary(std::string buffer)
 {
     if (outFile.is_open())
     {

@@ -4,7 +4,7 @@ CXX = c++
 
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -fsanitize=address -g3
 
-CXXFILES = main.cpp helpers.cpp get_extension.cpp for_header.cpp for_body.cpp post.cpp \
+CXXFILES = main.cpp helpers.cpp get_extension.cpp for_header.cpp for_body.cpp post_methods.cpp \
 
 OBJ = ${CXXFILES:.cpp=.o}
 
