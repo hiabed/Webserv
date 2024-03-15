@@ -1,32 +1,5 @@
 #include "webserv.hpp"
 
-post::post()
-{
-    // std::cout << "Default constructor called\n";
-    // post_point = 0;
-}
-
-post::post(const post &other)
-{
-    // post_point = 0;
-    // std::cout << "Copy constructor called\n";
-    *this = other;
-}
-
-post& post::operator=(const post &other)
-{
-    (void)other;
-    // std::cout << "Copy assignment operator called\n";
-    // if (this != &other)
-    //     post_point = other.getRawBits();
-    return *this;
-}
-
-post::~post()
-{
-    // std::cout << "Destructor called\n";
-}
-
 /*-- My Global variables --*/
 
 std::string fileName;
@@ -47,6 +20,30 @@ std::stringstream ss;
 std::string hexa;
 std::string concat;
 int f = 0;
+
+post::post()
+{
+    // std::cout << "Default constructor called\n";
+}
+
+post::post(const post &other)
+{
+    // std::cout << "Copy constructor called\n";
+    *this = other;
+}
+
+post& post::operator=(const post &other)
+{
+    (void)other;
+    // std::cout << "Copy assignment operator called\n";
+    // if (this != &other)
+    return *this;
+}
+
+post::~post()
+{
+    // std::cout << "Destructor called\n";
+}
 
 bool post::is_end_of_chunk()
 {
