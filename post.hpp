@@ -1,5 +1,5 @@
-#ifndef WEBSERV_HPP
-#define WEBSERV_HPP
+#ifndef POST_HPP
+#define POST_HPP
 
 #include <string>
 #include <sys/time.h>
@@ -36,7 +36,7 @@ public:
     bool post_method(std::string buffer);
     bool binary(std::string buffer);
     bool chunked(std::string buffer);
-    void open_unic_file(std::string contentType);
+    bool extension_founded(std::string contentType);
     void parse_hexa(std::string &remain);
     bool is_end_of_chunk();
 };

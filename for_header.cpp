@@ -1,4 +1,4 @@
-#include "webserv.hpp"
+#include "post.hpp"
 
 void post::parse_header(std::string buffer, std::string &content_type, std::string &content_length, std::string &transfer_encoding)
 {

@@ -1,4 +1,4 @@
-#include "webserv.hpp"
+#include "post.hpp"
 
 void post::PutBodyInFile(std::string to_join, std::string extension)
 {

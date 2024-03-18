@@ -1,4 +1,4 @@
-#include "webserv.hpp"
+#include "post.hpp"
 
 map post::read_file_extensions(const char *filename)
 {

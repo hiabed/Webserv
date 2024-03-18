@@ -1,4 +1,4 @@
-#include "webserv.hpp"
+#include "post.hpp"
 
 /*-- My Global variables --*/
 
@@ -59,16 +59,18 @@ bool post::is_end_of_chunk()
     return false;
 }
 
-void post::open_unic_file(std::string contentType)
+bool post::extension_founded(std::string contentType)
 {
     map m = read_file_extensions("fileExtensions");
     map::iterator it = m.find(contentType);
     if (it != m.end())
         extension = it->second;
     else
+    {
         std::cerr << "extension not found\n";
-    fileName = generateUniqueFilename();
-    outFile.open((fileName + extension).c_str());
+        return false;
+    }
+    return true;
 }
 
 bool post::post_method(std::string buffer)
@@ -76,7 +78,15 @@ bool post::post_method(std::string buffer)
     if (buffer.find("\r\n\r\n") != std::string::npos && f == 0)
     {
         parse_header(buffer, contentType, content_length, transfer_encoding);
-        open_unic_file(contentType.substr(0, contentType.find("\r\n")));
+        if (extension_founded(contentType))
+        {
+            fileName = generateUniqueFilename();
+            outFile.open((fileName + extension).c_str());
+        }
+        else
+        {
+            return true;
+        }
         buffer = buffer.substr(buffer.find("\r\n\r\n") + 4);
         if (transfer_encoding == "chunked")
             parse_hexa(buffer);
