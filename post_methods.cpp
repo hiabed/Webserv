@@ -134,6 +134,16 @@ bool post::binary(std::string buffer)
             f = 0;
             return true;
         }
+        else if (atoi(content_length.c_str()) < body_size)
+        {
+            outFile.close();
+            remove((generateUniqueFilename() + extension).c_str());
+            buffer.clear();
+            body_size = 0;
+            f = 0;
+            std::cerr << "ERROR: bad request.\n";
+            return true;
+        }
     }
     else
         std::cerr << "Error opening file.\n";
