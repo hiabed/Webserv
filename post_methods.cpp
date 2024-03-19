@@ -79,14 +79,9 @@ bool post::post_method(std::string buffer)
     {
         parse_header(buffer, contentType, content_length, transfer_encoding);
         if (extension_founded(contentType))
-        {
-            fileName = generateUniqueFilename();
-            outFile.open((fileName + extension).c_str());
-        }
+            outFile.open((generateUniqueFilename() + extension).c_str());
         else
-        {
             return true;
-        }
         buffer = buffer.substr(buffer.find("\r\n\r\n") + 4);
         if (transfer_encoding == "chunked")
             parse_hexa(buffer);
