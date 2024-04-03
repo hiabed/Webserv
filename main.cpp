@@ -62,6 +62,7 @@ void multiplexing()
                     /* event for read from fd*/
                     buffer.resize(1024);
                     readbyte = recv(events[i].data.fd, &buffer[0], 1024, 0);
+                    // std::cout << readbyte << std::endl;
                     if (readbyte == -1)
                     {
                         std::cerr << "read function failed to read from the socket file descriptor\n";

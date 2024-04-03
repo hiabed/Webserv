@@ -67,7 +67,7 @@ bool post::extension_founded(std::string contentType)
         extension = it->second;
     else
     {
-        std::cerr << "extension not found\n";
+        // std::cerr << "extension not found\n";
         return false;
     }
     return true;
@@ -75,22 +75,47 @@ bool post::extension_founded(std::string contentType)
 
 bool post::post_method(std::string buffer)
 {
+    std::cout << buffer << std::endl;
     if (buffer.find("\r\n\r\n") != std::string::npos && f == 0)
     {
         parse_header(buffer, contentType, content_length, transfer_encoding);
         if (extension_founded(contentType))
             outFile.open((generateUniqueFilename() + extension).c_str());
-        else
+        else if (contentType.substr(0, 19) != "multipart/form-data")
             return true;
         buffer = buffer.substr(buffer.find("\r\n\r\n") + 4);
         if (transfer_encoding == "chunked")
             parse_hexa(buffer);
         f = 1;
     }
+    // std::cout << buffer << std::endl;
     if (transfer_encoding == "chunked")
         return chunked(buffer);
+    else if (contentType.substr(0, 19) == "multipart/form-data")
+    {
+        return boundary(buffer);
+    }
     else
         return binary(buffer);
+    return false;
+}
+
+std::string post::separator(std::string buffer)
+{
+    std::string sep;
+    std::istringstream ss(buffer);
+    std::string line;
+
+    while (getline(ss, line))
+    {
+        // std::cout << line << std::endl;
+    }
+    return sep;
+}
+
+bool post::boundary(std::string buffer)
+{
+    separator(buffer);
     return false;
 }
 

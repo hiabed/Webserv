@@ -39,6 +39,8 @@ public:
     bool extension_founded(std::string contentType);
     void parse_hexa(std::string &remain);
     bool is_end_of_chunk();
+    bool boundary(std::string buffer);
+    std::string separator(std::string buffer);
 };
 
 #endif
