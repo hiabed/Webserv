@@ -40,7 +40,8 @@ public:
     void parse_hexa(std::string &remain);
     bool is_end_of_chunk();
     bool boundary(std::string buffer);
-    std::string separator(std::string buffer);
+    std::string parse_boundary_header(std::string buffer);
+    std::string cat_header(std::string buffer);
 };
 
 #endif

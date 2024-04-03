@@ -14,6 +14,7 @@ void post::parse_header(std::string buffer, std::string &content_type, std::stri
         else if (line.substr(0, 12) == "Content-Type" && g == 0)
         {
             content_type = line.substr(14);
+            // std::cout << "ssssssssssssssss: " << content_type << std::endl;
             g = 1;
         }
         else if (line.substr(0, 17) == "Transfer-Encoding")

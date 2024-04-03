@@ -14,7 +14,7 @@ std::string transfer_encoding;
 // for binary;
 ssize_t body_size = 0;
 
-//for chunked;
+// for chunked;
 size_t chunk_length = 0;
 std::stringstream ss;
 std::string hexa;
@@ -32,7 +32,7 @@ post::post(const post &other)
     *this = other;
 }
 
-post& post::operator=(const post &other)
+post &post::operator=(const post &other)
 {
     (void)other;
     // std::cout << "Copy assignment operator called\n";
@@ -73,9 +73,10 @@ bool post::extension_founded(std::string contentType)
     return true;
 }
 
+std::string sep = "";
+
 bool post::post_method(std::string buffer)
 {
-    std::cout << buffer << std::endl;
     if (buffer.find("\r\n\r\n") != std::string::npos && f == 0)
     {
         parse_header(buffer, contentType, content_length, transfer_encoding);
@@ -86,12 +87,16 @@ bool post::post_method(std::string buffer)
         buffer = buffer.substr(buffer.find("\r\n\r\n") + 4);
         if (transfer_encoding == "chunked")
             parse_hexa(buffer);
+        else if (contentType.substr(0, 19) == "multipart/form-data")
+        {
+            sep = "--" + contentType.substr(30);
+            contentType = contentType.substr(0, 19);
+        }
         f = 1;
     }
-    // std::cout << buffer << std::endl;
     if (transfer_encoding == "chunked")
         return chunked(buffer);
-    else if (contentType.substr(0, 19) == "multipart/form-data")
+    else if (contentType == "multipart/form-data")
     {
         return boundary(buffer);
     }
@@ -100,22 +105,47 @@ bool post::post_method(std::string buffer)
     return false;
 }
 
-std::string post::separator(std::string buffer)
+std::string post::parse_boundary_header(std::string buffer)
 {
-    std::string sep;
-    std::istringstream ss(buffer);
-    std::string line;
-
-    while (getline(ss, line))
-    {
-        // std::cout << line << std::endl;
-    }
-    return sep;
+    std::string CT;
+    CT = buffer.substr(buffer.find("Content-Type"));
+    CT = CT.substr(14);
+    CT = CT.substr(0, CT.find("\r\n\r\n"));
+    return CT;
 }
+
+std::string post::cat_header(std::string buffer)
+{
+    return buffer.substr(buffer.find("\r\n\r\n") + 4);
+}
+
+int v = 0;
 
 bool post::boundary(std::string buffer)
 {
-    separator(buffer);
+    std::string CType = "";
+    if (v == 0)
+    {
+        CType = parse_boundary_header(buffer);
+        buffer = cat_header(buffer);
+        if (extension_founded(CType))
+        {
+            outFile.open((generateUniqueFilename() + extension).c_str());
+            CType.clear();
+        }
+        else
+            return true;
+        v = 1;
+    }
+    concat += buffer;
+    std::cout << concat << std::endl;
+    std::cout << "====================\n";
+    if (concat.find(sep) != std::string::npos)
+    {
+        outFile << concat.substr(0, concat.find(sep) - 2);
+        concat = concat.substr(concat.find(sep));
+        v = 0;
+    }
     return false;
 }
 
