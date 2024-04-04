@@ -131,20 +131,27 @@ bool post::boundary(std::string buffer)
         if (extension_founded(CType))
         {
             outFile.open((generateUniqueFilename() + extension).c_str());
-            CType.clear();
+            // CType.clear();
         }
         else
             return true;
         v = 1;
     }
-    concat += buffer;
-    std::cout << concat << std::endl;
-    std::cout << "====================\n";
-    if (concat.find(sep) != std::string::npos)
+    if (outFile.is_open())
     {
-        outFile << concat.substr(0, concat.find(sep) - 2);
-        concat = concat.substr(concat.find(sep));
-        v = 0;
+        concat += buffer;
+        std::cout << concat << std::endl;
+        // std::cout << "====================\n";
+        if (concat.find(sep) != std::string::npos)
+        {
+            outFile << concat.substr(0, concat.find(sep) - 2);
+            concat = concat.substr(concat.find(sep));
+            outFile.close();
+            outFile.clear();
+            v = 0;
+        }
+        if (concat.find(sep + "--") != std::string::npos)
+            return true;
     }
     return false;
 }
