@@ -108,7 +108,7 @@ bool post::post_method(std::string buffer)
 std::string post::parse_boundary_header(std::string buffer)
 {
     std::string CT = "";
-    if (buffer.find("Content-Type") != std::string::npos)
+    if (buffer.find("Content-Type") != std::string::npos && buffer.length() > 87) // not sure;
     {
         CT = buffer.substr(buffer.find("Content-Type"));
         CT = CT.substr(14);
@@ -143,7 +143,6 @@ bool post::boundary(std::string buffer)
             if (extension_founded(CType))
             {
                 outFile.open((generateUniqueFilename() + extension).c_str());
-                CType.clear();
             }
             else
                 return true;
@@ -159,7 +158,6 @@ bool post::boundary(std::string buffer)
             // std::cout << concat << std::endl;
             outFile.close();
             outFile.clear();
-            // exit(1);
             v = 0;
         }
     }
