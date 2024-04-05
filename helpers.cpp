@@ -17,7 +17,7 @@ std::string post::generateUniqueFilename()
     gettimeofday(&tv, NULL);
 
     std::ostringstream filename_stream;
-    filename_stream << "outfile_" << tv.tv_sec;
+    filename_stream << "outfile_" << tv.tv_sec << "-" << tv.tv_usec;
 
     return filename_stream.str();
 }

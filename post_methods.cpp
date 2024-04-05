@@ -127,14 +127,21 @@ bool post::boundary(std::string buffer)
     /* ----------------------------108074513576787105840635
     Content-Disposition: form-data; name=""; filename="boundary.txt"
     Content-Type: text/plain */ 
+    // std::cout << concat << std::endl;
     concat += buffer;
-    std::cout << concat << std::endl;
     while(concat.find(sep) != std::string::npos)
     {
         if (v == 0)
         {
-            CType = parse_boundary_header(buffer);
-            buffer = cat_header(buffer);
+            try
+            {
+                CType = parse_boundary_header(concat);
+            }
+            catch(const std::exception& e)
+            {
+                std::cerr << "res"<< '\n';
+            }
+            concat = cat_header(concat);
             if (extension_founded(CType))
             {
                 outFile.open((generateUniqueFilename() + extension).c_str());
@@ -142,15 +149,20 @@ bool post::boundary(std::string buffer)
             }
             else
                 return true;
+            CType.clear();
             v = 1;
         }
-        if(outFile.is_open())
+        if(outFile.is_open() && concat.find(sep) != std::string::npos)
         {
-            outFile << concat.substr(0, concat.find(sep) - 2);
+            outFile << concat.substr(0, concat.find(sep) - 2); // -2 of \r\n;
+            // std::cout << concat.substr(0, concat.find(sep) - 2) << std::endl;
+            // std::cout << "\n+++++++++++++++\n";
+            // std::cout << "jkjdkjd" << std::endl;
             concat = concat.substr(concat.find(sep));
             // std::cout << concat << std::endl;
             outFile.close();
             outFile.clear();
+            // exit(1);
             v = 0;
         }
     }
