@@ -107,10 +107,13 @@ bool post::post_method(std::string buffer)
 
 std::string post::parse_boundary_header(std::string buffer)
 {
-    std::string CT;
-    CT = buffer.substr(buffer.find("Content-Type"));
-    CT = CT.substr(14);
-    CT = CT.substr(0, CT.find("\r\n\r\n"));
+    std::string CT = "";
+    if (buffer.find("Content-Type") != std::string::npos)
+    {
+        CT = buffer.substr(buffer.find("Content-Type"));
+        CT = CT.substr(14);
+        CT = CT.substr(0, CT.find("\r\n\r\n"));
+    }
     return CT;
 }
 
@@ -133,14 +136,9 @@ bool post::boundary(std::string buffer)
     {
         if (v == 0)
         {
-            try
-            {
-                CType = parse_boundary_header(concat);
-            }
-            catch(const std::exception& e)
-            {
-                std::cerr << "res"<< '\n';
-            }
+            CType = parse_boundary_header(concat);
+            if (CType.empty())
+                return true;
             concat = cat_header(concat);
             if (extension_founded(CType))
             {
@@ -157,7 +155,6 @@ bool post::boundary(std::string buffer)
             outFile << concat.substr(0, concat.find(sep) - 2); // -2 of \r\n;
             // std::cout << concat.substr(0, concat.find(sep) - 2) << std::endl;
             // std::cout << "\n+++++++++++++++\n";
-            // std::cout << "jkjdkjd" << std::endl;
             concat = concat.substr(concat.find(sep));
             // std::cout << concat << std::endl;
             outFile.close();
