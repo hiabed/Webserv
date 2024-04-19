@@ -145,7 +145,7 @@ bool post::boundary(std::string buffer)
                 outFile.open((generateUniqueFilename() + extension).c_str());
             }
             else
-                return true;
+                return true;//added
             CType.clear();
             v = 1;
         }
