@@ -129,8 +129,10 @@ bool post::boundary(std::string buffer)
 {
     /* ----------------------------108074513576787105840635
     Content-Disposition: form-data; name=""; filename="boundary.txt"
-    Content-Type: text/plain */ 
+    Content-Type: text/plain */
     concat += buffer;
+    // std::cout << buffer << std::endl;
+    // exit(1);
     while(concat.find(sep) != std::string::npos)
     {
         if (v == 0)
@@ -145,7 +147,7 @@ bool post::boundary(std::string buffer)
             else
             {
                 std::cerr << "extension not founded!\n";
-                break;
+                return false;
             }
             CType.clear();
             v = 1;
@@ -181,6 +183,11 @@ bool post::boundary(std::string buffer)
     if(outFile.is_open())
     {
         outFile << concat;
+        if (concat == (sep + "--\r\n"))
+        {
+            std::cout << "done.\n";
+            return true;
+        }
         concat.clear();
     }
     return false;
