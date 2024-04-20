@@ -131,21 +131,22 @@ bool post::boundary(std::string buffer)
     Content-Disposition: form-data; name=""; filename="boundary.txt"
     Content-Type: text/plain */ 
     concat += buffer;
-    std::cout << buffer << std::endl;
     while(concat.find(sep) != std::string::npos)
     {
         if (v == 0)
         {
+            std::cout << "here\n";
             CType = parse_boundary_header(concat);
-            if (CType.empty())
-                return true;
             concat = cat_header(concat);
             if (extension_founded(CType))
             {
                 outFile.open((generateUniqueFilename() + extension).c_str());
             }
             else
-                return true;//added
+            {
+                std::cerr << "extension not founded!\n";
+                break;
+            }
             CType.clear();
             v = 1;
         }
@@ -156,9 +157,12 @@ bool post::boundary(std::string buffer)
             outFile.close();
             outFile.clear();
             v = 0;
-            continue;
         }
-        return false;
+        if (concat == (sep + "--\r\n"))
+        {
+            std::cout << "done.\n";
+            return true;
+        }
     }
     if (v == 0)
     {
@@ -171,28 +175,14 @@ bool post::boundary(std::string buffer)
         else
         {
             std::cerr << "505 unsupported  media type\n";
-            return true;
         }
         v = 1;
     }
     if(outFile.is_open())
     {
-        if (concat.find(sep) != std::string::npos)
-        {
-            outFile << concat.substr(0, concat.find(sep) - 2); // -2 of \r\n;
-            concat = concat.substr(concat.find(sep));
-            outFile.close();
-            outFile.clear();
-            v = 0;
-        }
-        else //a problem may occur later;
-        {
-            outFile << concat;
-            concat.clear();
-        }
+        outFile << concat;
+        concat.clear();
     }
-    if (concat.find(sep + "--") != std::string::npos)
-        return true;
     return false;
 }
 
