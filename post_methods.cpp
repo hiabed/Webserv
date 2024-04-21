@@ -63,6 +63,7 @@ bool post::extension_founded(std::string contentType)
 {
     map m = read_file_extensions("fileExtensions");
     map::iterator it = m.find(contentType);
+    // std::cout <<"$#" <<contentType << "$%" << std::endl;
     if (it != m.end())
         extension = it->second;
     else
@@ -97,9 +98,7 @@ bool post::post_method(std::string buffer)
     if (transfer_encoding == "chunked")
         return chunked(buffer);
     else if (contentType == "multipart/form-data")
-    {
         return boundary(buffer);
-    }
     else
         return binary(buffer);
     return false;
@@ -131,13 +130,11 @@ bool post::boundary(std::string buffer)
     Content-Disposition: form-data; name=""; filename="boundary.txt"
     Content-Type: text/plain */
     concat += buffer;
-    // std::cout << buffer << std::endl;
-    // exit(1);
     while(concat.find(sep) != std::string::npos)
     {
         if (v == 0)
         {
-            std::cout << "here\n";
+            // std::cout << "here\n";
             CType = parse_boundary_header(concat);
             concat = cat_header(concat);
             if (extension_founded(CType))
@@ -149,7 +146,6 @@ bool post::boundary(std::string buffer)
                 std::cerr << "extension not founded!\n";
                 return false;
             }
-            CType.clear();
             v = 1;
         }
         if(outFile.is_open() && concat.find(sep) != std::string::npos)
@@ -162,21 +158,27 @@ bool post::boundary(std::string buffer)
         }
         if (concat == (sep + "--\r\n"))
         {
-            std::cout << "done.\n";
+            std::cout << "done1.\n";
+            concat.clear();
+            outFile.close();
+            outFile.clear();
+            v = 0;
+            f = 0;
             return true;
         }
     }
     if (v == 0)
     {
+        // std::cout << "concat =====>" << concat << std::endl;
         CType = parse_boundary_header(concat);
         concat = cat_header(concat);
-        if (extension_founded(CType))
+        if (extension_founded(CType) == true)
         {
             outFile.open((generateUniqueFilename() + extension).c_str());
         }
         else
         {
-            std::cerr << "505 unsupported  media type\n";
+            std::cerr << "414 unsupported media type\n";
         }
         v = 1;
     }
@@ -185,7 +187,12 @@ bool post::boundary(std::string buffer)
         outFile << concat;
         if (concat == (sep + "--\r\n"))
         {
-            std::cout << "done.\n";
+            concat.clear();
+            outFile.close();
+            outFile.clear();
+            f = 0;
+            v = 0;
+            std::cout << "done2.\n";
             return true;
         }
         concat.clear();
