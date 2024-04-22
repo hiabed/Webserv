@@ -69,7 +69,7 @@ void multiplexing()
                         exit(EXIT_FAILURE);
                     }
                     buffer.resize(readbyte);
-                    if (test.post_method(buffer))z
+                    if (test.post_method(buffer))
                         j = 1;
                 }
                 if (events[i].events & EPOLLOUT && j == 1)

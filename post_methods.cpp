@@ -134,7 +134,6 @@ bool post::boundary(std::string buffer)
     {
         if (v == 0)
         {
-            // std::cout << "here\n";
             CType = parse_boundary_header(concat);
             concat = cat_header(concat);
             if (extension_founded(CType))
@@ -169,32 +168,17 @@ bool post::boundary(std::string buffer)
     }
     if (v == 0)
     {
-        // std::cout << "concat =====>" << concat << std::endl;
         CType = parse_boundary_header(concat);
         concat = cat_header(concat);
         if (extension_founded(CType) == true)
-        {
             outFile.open((generateUniqueFilename() + extension).c_str());
-        }
         else
-        {
             std::cerr << "414 unsupported media type\n";
-        }
         v = 1;
     }
     if(outFile.is_open())
     {
         outFile << concat;
-        if (concat == (sep + "--\r\n"))
-        {
-            concat.clear();
-            outFile.close();
-            outFile.clear();
-            f = 0;
-            v = 0;
-            std::cout << "done2.\n";
-            return true;
-        }
         concat.clear();
     }
     return false;
