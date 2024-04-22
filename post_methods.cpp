@@ -4,7 +4,7 @@
 
 std::string fileName;
 std::ofstream outFile;
-std::string extension;
+std::string extension = ".txt";
 
 // for parsing header;
 std::string contentType;
@@ -124,11 +124,6 @@ std::string post::cat_header(std::string buffer)
 int v = 0;
 std::string CType = "";
 
-// bool post::checkFileName(std::string concat)
-// {
-
-// }
-
 bool post::boundary(std::string buffer)
 {
     /* ----------------------------108074513576787105840635
@@ -143,10 +138,8 @@ bool post::boundary(std::string buffer)
 
             CType = parse_boundary_header(concat);
             concat = cat_header(concat);
-            if (extension_founded(CType))
-            {
+            if (extension_founded(CType) || buffer.find("filename") != std::string::npos)
                 outFile.open((generateUniqueFilename() + extension).c_str());
-            }
             else
             {
                 std::cerr << "extension not founded!\n";
