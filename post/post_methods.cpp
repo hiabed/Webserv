@@ -87,8 +87,9 @@ bool post::post_method(std::string buffer)
             buffer.clear();
             return true;
         }
-        if (!extension_founded(content_type))
+        if (!extension_founded(content_type) && content_type.substr(0, 19) != "multipart/form-data")
         {
+            std::cout << content_type << std::endl;
             g = 2;
             buffer.clear();
             return true;
@@ -148,22 +149,19 @@ std::string CType = "";
 
 bool post::boundary(std::string buffer)
 {
-    /* ----------------------------108074513576787105840635\r\n
-    Content-Disposition: form-data; name=""; filename="boundary.txt"\r\n
-    Content-Type: text/plain\r\n*/
+    /* ----------------------------108074513576787105840635
+    Content-Disposition: form-data; name=""; filename="boundary.txt"
+    Content-Type: text/plain */
     concat += buffer;
-    while(concat.find(sep + "\r\n") != std::string::npos)
+    // std::cout << buffer << std::endl;
+    while(concat.find(sep) != std::string::npos)
     {
         if (v == 0)
         {
-            // std::cout << "here\n";
             CType = parse_boundary_header(concat);
             concat = cat_header(concat);
-            if (extension_founded(CType))
-            {
+            if (extension_founded(CType) || buffer.find("filename") != std::string::npos)
                 outFile.open((generateUniqueFilename() + extension).c_str());
-                extension.clear();
-            }
             else
             {
                 std::cerr << "extension not founded!\n";
@@ -190,6 +188,16 @@ bool post::boundary(std::string buffer)
             return true;
         }
     }
+    // if (v == 0)
+    // {
+    //     CType = parse_boundary_header(concat);
+    //     concat = cat_header(concat);
+    //     if (extension_founded(CType) == true)
+    //         outFile.open((generateUniqueFilename() + extension).c_str());
+    //     else
+    //         std::cerr << "414 unsupported media type\n";
+    //     v = 1;
+    // }
     if(outFile.is_open())
     {
         outFile << concat;
