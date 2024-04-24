@@ -226,9 +226,8 @@ bool post::binary(std::string buffer)
             buffer.clear();
             content_type.clear();
             body_size = 0;
-            f = 0;
-            g = 0;
-            std::cout << "done;\n";
+            f = 0; // header flag;
+            g = 0; // request flag;
             return true;
         }
         else if (body_size > atoi(content_length.c_str()))
@@ -239,7 +238,7 @@ bool post::binary(std::string buffer)
             body_size = 0;
             content_type.clear();
             f = 0; // header flag;
-            g = 1; // bad request flag;
+            g = 1; // request flag;
             return true;
         }
         // time out should be handled in multiplixing;
