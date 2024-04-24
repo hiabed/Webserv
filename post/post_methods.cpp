@@ -75,11 +75,14 @@ bool post::post_method(std::string buffer)
 {
     if (buffer.find("\r\n\r\n") != std::string::npos && f == 0)
     {
+        // std::cout << "====================\n";
+        // std::cout << buffer << std::endl;
+        // std::cout << "====================\n";
         g = 0;
         parse_header(buffer);
-        if (content_type.empty() || content_length.empty())
+        if (content_type.empty() || (content_length.empty() && transfer_encoding != "chunked"))
         {
-            // std::cout << "content type is empty\n";
+            // std::cout << "content type is empty " << content_type << std::endl;
             g = 1;
             buffer.clear();
             return true;
@@ -100,6 +103,13 @@ bool post::post_method(std::string buffer)
         buffer = buffer.substr(buffer.find("\r\n\r\n") + 4);
         if (transfer_encoding == "chunked")
             parse_hexa(buffer);
+        else if (transfer_encoding != "chunked" && g == 10)
+        {
+            // std::cout << "$$$" << transfer_encoding << "$$$" << std::endl;
+            g = 1;
+            buffer.clear();
+            return true;
+        }
         else if (content_type.substr(0, 19) == "multipart/form-data")
         {
             sep = "--" + content_type.substr(30);

@@ -211,7 +211,7 @@ void        multplixing::lanch_server(server parse)
                         }
                         if (fd_maps[events[i].data.fd].post_.g == 2)
                         {
-                            std::cout << "g value is: " << fd_maps[events[i].data.fd].post_.g << std::endl;
+                            // std::cout << "g value is: " << fd_maps[events[i].data.fd].post_.g << std::endl;
                             if (it_fd->second.resp.response_error("415", events[i].data.fd))
                             {
                                 fd_maps[events[i].data.fd].post_.g = 0;
@@ -254,8 +254,8 @@ void        multplixing::lanch_server(server parse)
                         }
                     }
                     /////////////////////////////////////// my method ///////////////////////////////////////
-                    std::cout << "j is: " << fd_maps[events[i].data.fd].post_.j << std::endl;
-                    std::cout << "method is: " << fd_maps[events[i].data.fd].requst.method << std::endl;
+                    // std::cout << "j is: " << fd_maps[events[i].data.fd].post_.j << std::endl;
+                    // std::cout << "method is: " << fd_maps[events[i].data.fd].requst.method << std::endl;
                     if (!fd_maps[events[i].data.fd].requst.method.compare("POST") && fd_maps[events[i].data.fd].post_.j)
                     {
                         std::string response = "HTTP/1.1 201 OK\r\nContent-Type: text/html\r\n\r\nhello";

@@ -108,7 +108,7 @@ void request::parse_heade(std::string buffer, server &serv, int fd)
 
 void post::parse_header(std::string buffer)
 {
-    int g = 0;
+    int t = 0;
     std::istringstream stream (buffer);
     std::string line;
     while (getline(stream, line))
@@ -117,13 +117,16 @@ void post::parse_header(std::string buffer)
             line.erase(line.find("\r"));
         if (line.substr(0, 14) == "Content-Length")
             content_length = line.substr(16);
-        else if (line.substr(0, 12) == "Content-Type" && g == 0)
+        else if (line.substr(0, 12) == "Content-Type" && t == 0)
         {
             content_type = line.substr(14);
-            g = 1;
+            t = 1;
         }
         else if (line.substr(0, 17) == "Transfer-Encoding")
+        {
             transfer_encoding = line.substr(19);
+            g = 10;
+        }
         if (line == "\r")
             return ;
     }
