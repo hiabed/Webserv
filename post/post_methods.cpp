@@ -6,6 +6,7 @@ extern std::map<int, Client>  fd_maps;
 
 std::ofstream outFile;
 std::string extension;
+std::string file = "";
 
 // for binary;
 ssize_t body_size = 0;
@@ -15,6 +16,7 @@ size_t chunk_length = 0;
 std::stringstream ss;
 std::string hexa;
 std::string concat;
+int chunked_len = 0;
 int f = 0;
 
 post::post()
@@ -41,14 +43,26 @@ post::~post()
     // std::cout << "Destructor called\n";
 }
 
-bool post::is_end_of_chunk()
+bool post::is_end_of_chunk(std::string max_body_size)
 {
     if (concat.find("\r\n0\r\n\r\n") != std::string::npos || chunk_length == 0)
     {
         outFile << concat.substr(0, concat.find("\r\n0\r\n\r\n"));
+        if (chunked_len > atoi(max_body_size.c_str()))
+        {
+            std::cout << "2222222222222222\n";
+            outFile.close();
+            remove(file.c_str());
+            content_type.clear();
+            f = 0; // header flag;
+            g = 3; // request flag;
+            chunked_len = 0;
+            return true;
+        }
         outFile.close();
         outFile.clear();
         concat.clear();
+        chunked_len = 0;
         f = 0;
         return true;
     }
@@ -71,15 +85,14 @@ bool post::extension_founded(std::string contentType)
 }
 
 std::string sep = "";
-std::string file = "";
 
 bool post::post_method(std::string buffer, int fd)
 {
 
     std::map<int, Client>::iterator   it_ = fd_maps.find(fd);
-    std::cout << "Upload_path = " << it_->second.requst.upload_path << "\n";
-    std::cout << "max_body = " << it_->second.serv_.max_body<< "\n";
-    std::cout << "upload: " << it_->second.requst.upload_state << std::endl;
+    // std::cout << "Upload_path = " << it_->second.requst.upload_path << "\n";
+    // std::cout << "max_body = " << it_->second.serv_.max_body<< "\n";
+    // std::cout << "upload: " << it_->second.requst.upload_state << std::endl;
     if (buffer.find("\r\n\r\n") != std::string::npos && f == 0)
     {
         // std::cout << "====================\n";
@@ -126,7 +139,7 @@ bool post::post_method(std::string buffer, int fd)
         f = 1;
     }
     if (transfer_encoding == "chunked")
-        return chunked(buffer);
+        return chunked(buffer, it_->second.serv_.max_body);
     else if (content_type == "multipart/form-data")
         return boundary(buffer);
     else
@@ -221,18 +234,32 @@ void post::parse_hexa(std::string &remain)
     remain = remain.substr(remain.find("\r\n") + 2); // the remaining body after hexa\r\n. if after hexa is \r\n it means that "\r\n0\r\n\r\n".
 }
 
-bool post::chunked(std::string buffer)
+bool post::chunked(std::string buffer, std::string max_body_size)
 {
     if (outFile.is_open())
     {
         concat += buffer;
+        // std::cout << concat << std::endl;
+        chunked_len += chunk_length;
+        if (chunked_len > atoi(max_body_size.c_str()))
+        {
+            std::cout << "11111111111111111111\n";
+            outFile.close();
+            remove(file.c_str());
+            buffer.clear();
+            content_type.clear();
+            f = 0; // header flag;
+            g = 3; // request flag;
+            chunked_len = 0;
+            return true;
+        }
         if (concat.length() >= (chunk_length + 9))
         {
             outFile << concat.substr(0, chunk_length);
             concat = concat.substr(chunk_length + 2);
             parse_hexa(concat);
         }
-        return is_end_of_chunk();
+        return is_end_of_chunk(max_body_size);
     }
     else
         std::cerr << "Error opening file.\n";

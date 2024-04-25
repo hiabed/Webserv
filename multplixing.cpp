@@ -159,7 +159,6 @@ void        multplixing::lanch_server(server parse)
                     }
                     if (flag == 0)
                     {
-                        std::cout << "Enter\n";
                         if (buffer.find("\r\n\r\n") != std::string::npos)
                         {
                             rq.parse_req(buffer, parse, events[i].data.fd );
@@ -203,6 +202,7 @@ void        multplixing::lanch_server(server parse)
                             fd_maps[events[i].data.fd].post_.j = 1;
                         if (fd_maps[events[i].data.fd].post_.g == 1)
                         {
+                            std::cout << "bad request.\n";
                             if (it_fd->second.resp.response_error("400", events[i].data.fd))
                             {
                                 fd_maps[events[i].data.fd].post_.g = 0;
@@ -210,9 +210,10 @@ void        multplixing::lanch_server(server parse)
                                     continue ;
                             }
                         }
-                        if (fd_maps[events[i].data.fd].post_.g == 2)
+                        else if (fd_maps[events[i].data.fd].post_.g == 2)
                         {
                             // std::cout << "g value is: " << fd_maps[events[i].data.fd].post_.g << std::endl;
+                            std::cout << "415 error message\n";
                             if (it_fd->second.resp.response_error("415", events[i].data.fd))
                             {
                                 fd_maps[events[i].data.fd].post_.g = 0;
@@ -220,7 +221,7 @@ void        multplixing::lanch_server(server parse)
                                     continue ;
                             }
                         }
-                        if (fd_maps[events[i].data.fd].post_.g == 3)
+                        else if (fd_maps[events[i].data.fd].post_.g == 3)
                         {
                             std::cout << "413 error message\n";
                             // std::cout << "g value is: " << fd_maps[events[i].data.fd].post_.g << std::endl;
