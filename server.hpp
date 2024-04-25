@@ -26,6 +26,7 @@ class server : public location
 {
     public:
         std::string                         server_n;
+        std::string                         max_body;
         std::string                         port;
         std::string                         id;
         std::string                         listen;

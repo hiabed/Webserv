@@ -20,6 +20,7 @@
 
 class delete_;
 class response;
+class post;
 
 class Client
 {

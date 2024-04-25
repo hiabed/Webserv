@@ -358,7 +358,7 @@ void        server::check_size(std::vector<std::string> &s, char c)
     {
         if ((!s[0].compare("root") || !s[0].compare("index") 
         || !s[0].compare("limit_except") || !s[0].compare("autoindex") 
-        || !s[0].compare("upload")) || !s[0].compare("cgi_status") ){
+        || !s[0].compare("upload")) || !s[0].compare("cgi_status") || !s[0].compare("upload_path")){
             if (s.size() != 2)
                 print_err("syntaxt_error on " + s[0]);
         }
@@ -413,6 +413,8 @@ void      server::handl_serv(std::vector<std::string> s)
         if (check_ip(s[1]) )
             print_err("syntaxt_error on ip");
     }
+    else if (!s[0].compare("client_max_body_size"))
+        max_body = s[1];
 }
 
 int      server::check_ip_nbr(std::string nbr)
@@ -463,7 +465,10 @@ void        server::stor_values(std::vector<std::string> s, char ch)
         else if (!s[0].compare("server_name"))
             cont[s[0]] = s[1].substr(0, s[1].size());
         else if (!s[0].compare("client_max_body_size"))
-            cont[s[0]] = s[1].substr(0, s[1].size());
+        {
+            max_body = s[1].substr(0, s[1].size());
+            // std::cout << "*-*-*-*-*- " << max_body << "\n";
+        }
         else if (!s[0].compare("index"))
             cont[s[0]] = s[1].substr(0, s[1].size());
     }

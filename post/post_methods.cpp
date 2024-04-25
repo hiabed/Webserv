@@ -1,4 +1,6 @@
-#include "../post.hpp"
+#include "../Client.hpp"
+
+extern std::map<int, Client>  fd_maps;
 
 /*-- My Global variables --*/
 
@@ -71,8 +73,13 @@ bool post::extension_founded(std::string contentType)
 std::string sep = "";
 std::string file = "";
 
-bool post::post_method(std::string buffer)
+bool post::post_method(std::string buffer, int fd)
 {
+
+    std::map<int, Client>::iterator   it_ = fd_maps.find(fd);
+    std::cout << "Upload_path = " << it_->second.requst.upload_path << "\n";
+    std::cout << "max_body = " << it_->second.serv_.max_body<< "\n";
+    std::cout << "upload: " << it_->second.requst.upload_state << std::endl;
     if (buffer.find("\r\n\r\n") != std::string::npos && f == 0)
     {
         // std::cout << "====================\n";
@@ -123,7 +130,7 @@ bool post::post_method(std::string buffer)
     else if (content_type == "multipart/form-data")
         return boundary(buffer);
     else
-        return binary(buffer);
+        return binary(buffer, it_->second.serv_.max_body);
     return false;
 }
 
@@ -232,20 +239,21 @@ bool post::chunked(std::string buffer)
     return false;
 }
 
-bool post::binary(std::string buffer)
+bool post::binary(std::string buffer, std::string max_body_size)
 {
     if (outFile.is_open())
     {
         outFile << buffer;
         body_size += buffer.size();
-        if (body_size == atoi(content_length.c_str()))
+        if (body_size > atoi(max_body_size.c_str()) || atoi(content_length.c_str()) > atoi(max_body_size.c_str()))
         {
             outFile.close();
+            remove(file.c_str());
             buffer.clear();
-            content_type.clear();
             body_size = 0;
+            content_type.clear();
             f = 0; // header flag;
-            g = 0; // request flag;
+            g = 3; // request flag;
             return true;
         }
         else if (body_size > atoi(content_length.c_str()))
@@ -257,6 +265,16 @@ bool post::binary(std::string buffer)
             content_type.clear();
             f = 0; // header flag;
             g = 1; // request flag;
+            return true;
+        }
+        else if (body_size == atoi(content_length.c_str()))
+        {
+            outFile.close();
+            buffer.clear();
+            content_type.clear();
+            body_size = 0;
+            f = 0; // header flag;
+            g = 0; // request flag;
             return true;
         }
         // time out should be handled in multiplixing;

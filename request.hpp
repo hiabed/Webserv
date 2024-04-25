@@ -22,6 +22,7 @@ class request
 {
     public:
         std::string                         content_type;
+        std::string                         upload_path;
         std::string                         content_length;
         std::string                         transfer_encoding;
         std::string                         uri;
@@ -55,6 +56,8 @@ class request
         std::map<std::string, std::string>  root_map;
         std::map<std::string, std::string>  response_message;
         std::vector<server*>::iterator      it;
+        std::string                         max_body;
+
 
         /*************** REQUEST FUNCTIONS ***************/
 

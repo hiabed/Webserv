@@ -1,5 +1,5 @@
 #include "../request.hpp"
-#include "../post.hpp"
+#include "../Client.hpp"
 #include "../request.hpp"
 #include "../multplixing.hpp"
 
@@ -27,7 +27,7 @@ void request::getServer(int fd) {
 
     int client_fd = client_history[fd];
     it = server_history[client_fd];
-
+    // std::cout << "==== " << (*it)->max_body << "====\n";
 }
 
 int request::parseHost(std::string hst, int fd) {

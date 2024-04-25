@@ -136,6 +136,8 @@ std::string     request:: get_full_uri(server &server, Client& obj)
     // print with bold Pink "PAY ATTENTION TO THIS FUNCTION FASH YJI AYOUB"
     // std::cout << "\033[1;35m" << "PAY ATTENTION TO THIS FUNCTION FASH YJI AYOUB" << "\033[0m" << std::endl;
     int     loca_found = 0;
+    // std::cout << "---------- max_body = " << (*it)->max_body << "\n";
+    max_body = (*it)->max_body;
     longest_loca = find_longest_path(server, obj);
     rest_fldr    = path.substr(longest_loca.length()); 
     for (size_t j = 0; j < (*it)->l.size(); j++)
@@ -159,6 +161,8 @@ int           request::rewrite_location(std::map<std::string, std::string> locat
     {
         if ((!(*itb).first.compare("upload")))
             upload_state = (*itb).second;
+        if ((!(*itb).first.compare("upload_path")))
+            upload_path = (*itb).second;
         if ((!(*itb).first.compare("root")))
             loca__root = (*itb).second;
         if ((!itb->first.compare("cgi_status")))  
@@ -171,13 +175,6 @@ int           request::rewrite_location(std::map<std::string, std::string> locat
             root_map = location_map;
         if ((!(*itb).first.compare("location") &&  !itb->second.compare(longest_loca)))
         {
-            if ((!(*itb).first.compare("upload")))
-                upload_state = (*itb).second;
-            if ((!(*itb).first.compare("root")))
-                loca__root = (*itb).second;
-            if ((!itb->first.compare("cgi_status")))  
-                stat_cgi = itb->second;
-            found = true;
             auto_index_stat = check_autoindex(location_map);
             std::map<std::string, std::string>::iterator it_b = location_map.find("root");
             if (!rest_fldr.empty()) // rest 3amr

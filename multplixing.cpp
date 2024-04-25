@@ -159,6 +159,7 @@ void        multplixing::lanch_server(server parse)
                     }
                     if (flag == 0)
                     {
+                        std::cout << "Enter\n";
                         if (buffer.find("\r\n\r\n") != std::string::npos)
                         {
                             rq.parse_req(buffer, parse, events[i].data.fd );
@@ -194,17 +195,17 @@ void        multplixing::lanch_server(server parse)
                             }
                         }
                     }
-                    if (rq.method == "POST" && flag == 1 && !it_fd->second.not_allow_method)
+                    if (rq.method == "POST" && flag == 1 && !it_fd->second.not_allow_method && fd_maps[events[i].data.fd].requst.upload_state == "on")
                     {
+                        flag = 0;
                         fd_maps[events[i].data.fd].post_.j = 0;
-                        if (fd_maps[events[i].data.fd].post_.post_method(buffer)  && !it_fd->second.not_allow_method)
+                        if (fd_maps[events[i].data.fd].post_.post_method(buffer, events[i].data.fd)  && !it_fd->second.not_allow_method)
                             fd_maps[events[i].data.fd].post_.j = 1;
                         if (fd_maps[events[i].data.fd].post_.g == 1)
                         {
                             if (it_fd->second.resp.response_error("400", events[i].data.fd))
                             {
                                 fd_maps[events[i].data.fd].post_.g = 0;
-                                flag = 0;
                                 if (close_fd(events[i].data.fd))
                                     continue ;
                             }
@@ -215,10 +216,30 @@ void        multplixing::lanch_server(server parse)
                             if (it_fd->second.resp.response_error("415", events[i].data.fd))
                             {
                                 fd_maps[events[i].data.fd].post_.g = 0;
-                                flag = 0;
                                 if (close_fd(events[i].data.fd))
                                     continue ;
                             }
+                        }
+                        if (fd_maps[events[i].data.fd].post_.g == 3)
+                        {
+                            std::cout << "413 error message\n";
+                            // std::cout << "g value is: " << fd_maps[events[i].data.fd].post_.g << std::endl;
+                            if (it_fd->second.resp.response_error("413", events[i].data.fd))
+                            {
+                                fd_maps[events[i].data.fd].post_.g = 0;
+                                if (close_fd(events[i].data.fd))
+                                    continue ;
+                            }
+                        }
+                    }
+                    if (fd_maps[events[i].data.fd].requst.upload_state == "off")
+                    {
+                        if (it_fd->second.resp.response_error("403", events[i].data.fd))
+                        {
+                            fd_maps[events[i].data.fd].post_.g = 0;
+                            flag = 0;
+                            if (close_fd(events[i].data.fd))
+                                continue ;
                         }
                     }
                     fd_maps[events[i].data.fd].u_can_send = 1;

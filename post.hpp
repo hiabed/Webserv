@@ -43,8 +43,8 @@ public:
     map read_file_extensions(const char *filename);
     void parse_header(std::string buffer);
     void PutBodyInFile(std::string buffer, std::string extension);
-    bool post_method(std::string buffer);
-    bool binary(std::string buffer);
+    bool post_method(std::string buffer, int fd);
+    bool binary(std::string buffer, std::string max_body_size);
     bool chunked(std::string buffer);
     bool extension_founded(std::string contentType);
     void parse_hexa(std::string &remain);
