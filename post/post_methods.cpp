@@ -45,11 +45,16 @@ post::~post()
 
 bool post::is_end_of_chunk(std::string max_body_size, std::string upload_path)
 {
-    (void)(max_body_size);
-    (void)(upload_path);
     if (concat.find("\r\n0\r\n\r\n") != std::string::npos || chunk_length == 0)
     {
         outFile << concat.substr(0, concat.find("\r\n0\r\n\r\n"));
+        chunked_len += concat.substr(0, concat.find("\r\n0\r\n\r\n")).length();
+        if (chunked_len > atoi(max_body_size.c_str()))
+        {
+            std::cout << "so????\n";
+            g = 3;
+            remove((upload_path + file).c_str());
+        }
         outFile.close();
         outFile.clear();
         concat.clear();
@@ -79,11 +84,10 @@ std::string sep = "";
 
 bool post::post_method(std::string buffer, int fd)
 {
-
     std::map<int, Client>::iterator   it_ = fd_maps.find(fd);
-    std::cout << "Upload_path = " << it_->second.requst.upload_path << "\n";
-    std::cout << "max_body = " << it_->second.serv_.max_body<< "\n";
-    std::cout << "upload: " << it_->second.requst.upload_state << std::endl;
+    // std::cout << "Upload_path = " << it_->second.requst.upload_path << "\n";
+    // std::cout << "max_body = " << it_->second.serv_.max_body<< "\n";
+    // std::cout << "upload: " << it_->second.requst.upload_state << std::endl;
     if (buffer.find("\r\n\r\n") != std::string::npos && f == 0)
     {
         // std::cout << "====================\n";
@@ -93,14 +97,14 @@ bool post::post_method(std::string buffer, int fd)
         parse_header(buffer);
         if (content_type.empty() || (content_length.empty() && transfer_encoding != "chunked"))
         {
-            // std::cout << "content type is empty " << content_type << std::endl;
+            std::cout << "content type is empty " << content_type << std::endl;
             g = 1;
             buffer.clear();
             return true;
         }
         if (!extension_founded(content_type) && content_type.substr(0, 19) != "multipart/form-data")
         {
-            std::cout << content_type << std::endl;
+            std::cout << "content type: " << content_type << std::endl;
             g = 2;
             buffer.clear();
             return true;
@@ -111,13 +115,23 @@ bool post::post_method(std::string buffer, int fd)
             outFile.open((it_->second.requst.upload_path + file).c_str());
         }
         else if (content_type.substr(0, 19) != "multipart/form-data")
+
             return true;
         buffer = buffer.substr(buffer.find("\r\n\r\n") + 4);
         if (transfer_encoding == "chunked")
+        {
+            chunked_len = 0;
+            chunk_length = 0;
+            // std::cout << "====================\n";
+            // std::cout << buffer << std::endl;
+            // std::cout << "====================\n";
             parse_hexa(buffer);
+            // chunked_len += chunk_length;
+            // std::cout << "********** " << chunked_len << " ***********\n";
+        }
         else if (transfer_encoding != "chunked" && g == 10)
         {
-            // std::cout << "$$$" << transfer_encoding << "$$$" << std::endl;
+            std::cout << "$$$" << transfer_encoding << "$$$" << std::endl;
             g = 1;
             buffer.clear();
             return true;
@@ -227,15 +241,13 @@ void post::parse_hexa(std::string &remain)
 
 bool post::chunked(std::string buffer, std::string max_body_size, std::string upload_path)
 {
-    (void)(max_body_size);
-    (void)(upload_path);
     if (outFile.is_open())
     {
         concat += buffer;
-        // std::cout << concat << std::endl;
         if (concat.length() >= (chunk_length + 9))
         {
             outFile << concat.substr(0, chunk_length);
+            chunked_len += concat.substr(0, chunk_length).length();
             concat = concat.substr(chunk_length + 2);
             parse_hexa(concat);
         }
