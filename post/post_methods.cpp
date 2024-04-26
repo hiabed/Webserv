@@ -43,22 +43,13 @@ post::~post()
     // std::cout << "Destructor called\n";
 }
 
-bool post::is_end_of_chunk(std::string max_body_size)
+bool post::is_end_of_chunk(std::string max_body_size, std::string upload_path)
 {
+    (void)(max_body_size);
+    (void)(upload_path);
     if (concat.find("\r\n0\r\n\r\n") != std::string::npos || chunk_length == 0)
     {
         outFile << concat.substr(0, concat.find("\r\n0\r\n\r\n"));
-        if (chunked_len > atoi(max_body_size.c_str()))
-        {
-            std::cout << "2222222222222222\n";
-            outFile.close();
-            remove(file.c_str());
-            content_type.clear();
-            f = 0; // header flag;
-            g = 3; // request flag;
-            chunked_len = 0;
-            return true;
-        }
         outFile.close();
         outFile.clear();
         concat.clear();
@@ -90,9 +81,9 @@ bool post::post_method(std::string buffer, int fd)
 {
 
     std::map<int, Client>::iterator   it_ = fd_maps.find(fd);
-    // std::cout << "Upload_path = " << it_->second.requst.upload_path << "\n";
-    // std::cout << "max_body = " << it_->second.serv_.max_body<< "\n";
-    // std::cout << "upload: " << it_->second.requst.upload_state << std::endl;
+    std::cout << "Upload_path = " << it_->second.requst.upload_path << "\n";
+    std::cout << "max_body = " << it_->second.serv_.max_body<< "\n";
+    std::cout << "upload: " << it_->second.requst.upload_state << std::endl;
     if (buffer.find("\r\n\r\n") != std::string::npos && f == 0)
     {
         // std::cout << "====================\n";
@@ -117,7 +108,7 @@ bool post::post_method(std::string buffer, int fd)
         if (extension_founded(content_type))
         {
             file = (generateUniqueFilename() + extension);
-            outFile.open(file.c_str());
+            outFile.open((it_->second.requst.upload_path + file).c_str());
         }
         else if (content_type.substr(0, 19) != "multipart/form-data")
             return true;
@@ -139,11 +130,11 @@ bool post::post_method(std::string buffer, int fd)
         f = 1;
     }
     if (transfer_encoding == "chunked")
-        return chunked(buffer, it_->second.serv_.max_body);
+        return chunked(buffer, it_->second.serv_.max_body, it_->second.requst.upload_path);
     else if (content_type == "multipart/form-data")
         return boundary(buffer);
     else
-        return binary(buffer, it_->second.serv_.max_body);
+        return binary(buffer, it_->second.serv_.max_body, it_->second.requst.upload_path);
     return false;
 }
 
@@ -234,39 +225,28 @@ void post::parse_hexa(std::string &remain)
     remain = remain.substr(remain.find("\r\n") + 2); // the remaining body after hexa\r\n. if after hexa is \r\n it means that "\r\n0\r\n\r\n".
 }
 
-bool post::chunked(std::string buffer, std::string max_body_size)
+bool post::chunked(std::string buffer, std::string max_body_size, std::string upload_path)
 {
+    (void)(max_body_size);
+    (void)(upload_path);
     if (outFile.is_open())
     {
         concat += buffer;
         // std::cout << concat << std::endl;
-        chunked_len += chunk_length;
-        if (chunked_len > atoi(max_body_size.c_str()))
-        {
-            std::cout << "11111111111111111111\n";
-            outFile.close();
-            remove(file.c_str());
-            buffer.clear();
-            content_type.clear();
-            f = 0; // header flag;
-            g = 3; // request flag;
-            chunked_len = 0;
-            return true;
-        }
         if (concat.length() >= (chunk_length + 9))
         {
             outFile << concat.substr(0, chunk_length);
             concat = concat.substr(chunk_length + 2);
             parse_hexa(concat);
         }
-        return is_end_of_chunk(max_body_size);
+        return is_end_of_chunk(max_body_size, upload_path);
     }
     else
         std::cerr << "Error opening file.\n";
     return false;
 }
 
-bool post::binary(std::string buffer, std::string max_body_size)
+bool post::binary(std::string buffer, std::string max_body_size, std::string upload_path)
 {
     if (outFile.is_open())
     {
@@ -275,7 +255,7 @@ bool post::binary(std::string buffer, std::string max_body_size)
         if (body_size > atoi(max_body_size.c_str()) || atoi(content_length.c_str()) > atoi(max_body_size.c_str()))
         {
             outFile.close();
-            remove(file.c_str());
+            remove((upload_path + file).c_str());
             buffer.clear();
             body_size = 0;
             content_type.clear();
@@ -286,7 +266,7 @@ bool post::binary(std::string buffer, std::string max_body_size)
         else if (body_size > atoi(content_length.c_str()))
         {
             outFile.close();
-            remove(file.c_str());
+            remove((upload_path + file).c_str());
             buffer.clear();
             body_size = 0;
             content_type.clear();
