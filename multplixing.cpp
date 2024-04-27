@@ -188,15 +188,13 @@ void        multplixing::lanch_server(server parse)
                             }
                             flag = 1;
                         }
-                        else
-                            continue;
-                        // else {
-                        //     if (it_fd->second.resp.response_error("400", events[i].data.fd))
-                        //     {
-                        //         if (close_fd( events[i].data.fd, epoll_fd ))
-                        //             continue ;
-                        //     }
-                        // }
+                        else {
+                            if (it_fd->second.resp.response_error("400", events[i].data.fd))
+                            {
+                                if (close_fd( events[i].data.fd, epoll_fd ))
+                                    continue ;
+                            }
+                        }
                     }
                     fd_maps[events[i].data.fd].post_.g = 0;
                     // print the vlue of rq.method + flag + it_fd->second.not_allow_method with bold yellow

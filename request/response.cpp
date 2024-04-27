@@ -77,8 +77,9 @@ std::map<std::string, std::string>        response::message_response_stat(/*std:
     response_message["404"] = "Not Found";
     response_message["405"] = "Method Not Allowed";
     response_message["409"] = "Conflict";
+    response_message["413"] = "Request Entity Too Large";
+    response_message["415"] = "Unsupported Media Type";
     response_message["500"] = "Internal Server Error";
-     response_message["413"] = "Request Entity Too Large";
     // response_message["505"] = "Version Not Supported";
     // response_message["501"] = "Not Implemented";
     // response_message["502"] = "Bad Gateway";
@@ -94,7 +95,7 @@ std::string      response::get_header(std::string wich, std::string exten, std::
     std::map<std::string , std::string>::iterator it = response_message.find(wich);
     if (it != response_message.end())
     {
-        if (!wich.compare("200") || !wich.compare("404") || !wich.compare("403") || !wich.compare("500") 
+        if (!wich.compare("200") || !wich.compare("404") || !wich.compare("403") || !wich.compare("500") || !wich.compare("400")
         || !wich.compare("405") || !wich.compare("204") || !wich.compare("415") || !wich.compare("409") || !wich.compare("413"))
         {
             response = "HTTP/1.1 ";

@@ -124,8 +124,6 @@ bool post::post_method(std::string buffer, int fd)
         {
             chunked_len = 0;
             parse_hexa(buffer);
-            // chunked_len += chunk_length;
-            // std::cout << "********** " << chunked_len << " ***********\n";
         }
         else if (transfer_encoding != "chunked" && g == 10)
         {
