@@ -251,16 +251,6 @@ void        multplixing::lanch_server(server parse)
                             }
                         }
                     }
-                    if (fd_maps[events[i].data.fd].requst.upload_state == "off")
-                    {
-                        if (it_fd->second.resp.response_error("403", events[i].data.fd))
-                        {
-                            fd_maps[events[i].data.fd].post_.g = 0;
-                            flag = 0;
-                            if (close_fd(events[i].data.fd, epoll_fd))
-                                continue ;
-                        }
-                    }
                     fd_maps[events[i].data.fd].u_can_send = 1;
                     // std::cout << "CGI TESTING : '" << fd_maps[events[i].data.fd].requst.stat_cgi << "'" << std::endl;
                     fd_maps[events[i].data.fd].cgi_.checkifcgi(rq, is_cgi, events[i].data.fd);
