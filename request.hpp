@@ -22,7 +22,6 @@ class request
 {
     public:
         std::string                         content_type;
-        std::string                         upload_path;
         std::string                         content_length;
         std::string                         transfer_encoding;
         std::string                         uri;
@@ -35,6 +34,7 @@ class request
         std::string                         full_path;
         std::string                         full_rest;
         std::string                         loca__root;
+        std::string                         redirction_path;
         size_t                              pos;
         bool                                found;
         bool                                method_state;
@@ -42,10 +42,13 @@ class request
         unsigned long                       g;
         size_t                              check;
         int                                 x;
+        int                                 redirection_stat;
         int                                 redirct_loca;
+        int                                 check_redi;
         int                                 x_cgi;
         std::string                         longest_loca;
         std::string                         stat_cgi;
+        std::string                         upload_path;
         std::string                         line;
         size_t                              last;
         std::vector<std::string>            vec;
@@ -56,8 +59,6 @@ class request
         std::map<std::string, std::string>  root_map;
         std::map<std::string, std::string>  response_message;
         std::vector<server*>::iterator      it;
-        std::string                         max_body;
-
 
         /*************** REQUEST FUNCTIONS ***************/
 
@@ -68,7 +69,7 @@ class request
         void                                      print_map(std::map<std::string, std::string> m);
         int                                       rewrite_location(std::map<std::string, std::string> location_map);
         void                                      fill_response_varbls(std::string &path);
-        void                                      parse_heade(std::string buffer, server &serv, int fd);
+        int                                      parse_heade(std::string buffer, server &serv, int fd);
         std::string                               get_delet_resp(std::string path, int stat);
         void                                      fill_extentions();
         std::streampos                            get_fileLenth(std::string path);
@@ -79,11 +80,10 @@ class request
         std::string                                get_full_uri( server &server, Client &obj);
         std::string                                find_longest_path(server &server, Client &obj);
         std::string                                delet_method(std::string path, server &server);
-        void                                       parse_req(std::string   rq, server &server, int fd);
+        int                                      parse_req(std::string   rq, server &server, int fd);
         int                                        one_of_allowed(std::string mehod, std::vector<std::string> allowed_methods);
         int                                        parseHost(std::string hst, int fd);
         void                                       getServer(int fd);
-        
 
         template <typename T>
         std::string to_string(T value) 
@@ -95,6 +95,7 @@ class request
         request();
         ~request();
 };
+
 
 
 #endif

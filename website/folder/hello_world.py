@@ -1,2 +1,3 @@
-print("Hello, World!")
-exit(-1)
+#!/usr/bin/env python3
+
+print("<h1>CGI IS WORKING !!!</h1>")

@@ -20,14 +20,15 @@
 
 class delete_;
 class response;
-class post;
 
 class Client
 {
     public:
+        int                                 epoll_fd;
         std::map<std::string, std::string>  response_message;
         int                                 res_header;
         std::string                         stor_uri;
+        std::string                         redirec_path;
         std::ifstream                       read_f;
         int                                 rd_done;
         int                                 res_sent;
