@@ -188,19 +188,30 @@ void        multplixing::lanch_server(server parse)
                             }
                             flag = 1;
                         }
-                        else {
-                            if (it_fd->second.resp.response_error("400", events[i].data.fd))
-                            {
-                                if (close_fd( events[i].data.fd, epoll_fd ))
-                                    continue ;
-                            }
-                        }
+                        else
+                            continue;
+                        // else {
+                        //     if (it_fd->second.resp.response_error("400", events[i].data.fd))
+                        //     {
+                        //         if (close_fd( events[i].data.fd, epoll_fd ))
+                        //             continue ;
+                        //     }
+                        // }
                     }
                     fd_maps[events[i].data.fd].post_.g = 0;
                     // print the vlue of rq.method + flag + it_fd->second.not_allow_method with bold yellow
                     // std::cout << "\033[1;33m" << rq.method << " " << flag << " " << it_fd->second.not_allow_method << "\033[0m" << std::endl;
                     fd_maps[events[i].data.fd].post_.j = 0;
-                    if (rq.method == "POST" && flag == 1 && !it_fd->second.not_allow_method)
+                    if (fd_maps[events[i].data.fd].requst.upload_state != "on")
+                    {
+                        if (it_fd->second.resp.response_error("403", events[i].data.fd))
+                        {
+                            fd_maps[events[i].data.fd].post_.g = 0;
+                            if (close_fd(events[i].data.fd, epoll_fd))
+                                continue ;
+                        }
+                    }
+                    if (rq.method == "POST" && flag == 1 && !it_fd->second.not_allow_method && fd_maps[events[i].data.fd].requst.upload_state == "on")
                     {
                         // print with bold red "I AM IN THE POST FUNCTION"
                         // std::cout << "\033[1;31mI AM IN THE POST FUNCTION\033[0m" << std::endl;

@@ -45,7 +45,6 @@ int     response::response_error(std::string stat, int fd)
             // std::cout << "size = " << response_message.size() << "\n";
             if (it_message_error == response_message.end())
             {
-                exit (10);
                 return (0);
             }
             std::string _respond_stat;

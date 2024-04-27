@@ -55,13 +55,13 @@ bool post::is_end_of_chunk(std::string max_body_size, std::string upload_path)
         f = 0;
         if (chunked_len > atoi(max_body_size.c_str()))
         {
-            std::cout << "so????\n";
+            // std::cout << "so????\n";
             g = 3;
             remove((upload_path + file).c_str());
             chunked_len = 0;
             return true;
         }
-        std::cout << "done;\n";
+        // std::cout << "done;\n";
         return true;
     }
     return false;
@@ -90,9 +90,9 @@ bool post::post_method(std::string buffer, int fd)
     // std::cout << "Upload_path = " << it_->second.requst.upload_path << "\n";
     // std::cout << "max_body = " << it_->second.serv_.max_body<< "\n";
     // std::cout << "upload: " << it_->second.requst.upload_state << std::endl;
-    std::cout << "====================\n";
-    std::cout << buffer << std::endl;
-    std::cout << "====================\n";
+    // std::cout << "====================\n";
+    // std::cout << buffer << std::endl;
+    // std::cout << "====================\n";
     g = 0;
     if (buffer.find("\r\n\r\n") != std::string::npos && f == 0)
     {
