@@ -196,6 +196,7 @@ void        multplixing::lanch_server(server parse)
                             }
                         }
                     }
+                    fd_maps[events[i].data.fd].post_.g = 0;
                     // print the vlue of rq.method + flag + it_fd->second.not_allow_method with bold yellow
                     // std::cout << "\033[1;33m" << rq.method << " " << flag << " " << it_fd->second.not_allow_method << "\033[0m" << std::endl;
                     fd_maps[events[i].data.fd].post_.j = 0;

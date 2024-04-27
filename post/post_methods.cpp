@@ -45,8 +45,6 @@ post::~post()
 
 bool post::is_end_of_chunk(std::string max_body_size, std::string upload_path)
 {
-    (void)max_body_size;
-    (void)upload_path;
     if (concat.find("\r\n0\r\n\r\n") != std::string::npos || chunk_length == 0)
     {
         outFile << concat.substr(0, concat.find("\r\n0\r\n\r\n"));
@@ -54,15 +52,15 @@ bool post::is_end_of_chunk(std::string max_body_size, std::string upload_path)
         outFile.close();
         outFile.clear();
         concat.clear();
-        chunked_len = 0;
         f = 0;
-        // if (chunked_len > atoi(max_body_size.c_str()))
-        // {
-        //     std::cout << "so????\n";
-        //     g = 3;
-        //     remove((upload_path + file).c_str());
-        //     return true;
-        // }
+        if (chunked_len > atoi(max_body_size.c_str()))
+        {
+            std::cout << "so????\n";
+            g = 3;
+            remove((upload_path + file).c_str());
+            chunked_len = 0;
+            return true;
+        }
         std::cout << "done;\n";
         return true;
     }
@@ -92,6 +90,9 @@ bool post::post_method(std::string buffer, int fd)
     // std::cout << "Upload_path = " << it_->second.requst.upload_path << "\n";
     // std::cout << "max_body = " << it_->second.serv_.max_body<< "\n";
     // std::cout << "upload: " << it_->second.requst.upload_state << std::endl;
+    std::cout << "====================\n";
+    std::cout << buffer << std::endl;
+    std::cout << "====================\n";
     g = 0;
     if (buffer.find("\r\n\r\n") != std::string::npos && f == 0)
     {
@@ -122,10 +123,6 @@ bool post::post_method(std::string buffer, int fd)
         if (transfer_encoding == "chunked")
         {
             chunked_len = 0;
-            chunk_length = 0;
-            // std::cout << "====================\n";
-            // std::cout << buffer << std::endl;
-            // std::cout << "====================\n";
             parse_hexa(buffer);
             // chunked_len += chunk_length;
             // std::cout << "********** " << chunked_len << " ***********\n";
