@@ -201,14 +201,9 @@ void        multplixing::lanch_server(server parse)
                         }
                         /****************        end        *********************/
                     }
-                    // print with bold yellow "I AM IN THE READ FUNCTION"
-                    //"\033[1;33mI AM IN THE READ FUNCTION\033[0m" << std::endl;
-                    // print the vlue of rq.method + flag + it_fd->second.not_allow_method with bold yellow
-                    //"\033[1;33m" << rq.method << " " << flag << " " << it_fd->second.not_allow_method << "\033[0m" << std::endl;
+                    /**************** FOR POST METHOD *********************/
 
                     fd_maps[events[i].data.fd].post_.g = 0;
-                    // print the vlue of rq.method + flag + it_fd->second.not_allow_method with bold yellow
-                    // //"\033[1;33m" << rq.method << " " << flag << " " << it_fd->second.not_allow_method << "\033[0m" << std::endl;
                     fd_maps[events[i].data.fd].post_.j = 0;
                     if (rq.method == "POST" && flag == 1 && !it_fd->second.not_allow_method)
                     {
@@ -263,6 +258,7 @@ void        multplixing::lanch_server(server parse)
                             }
                         }
                     }
+                    /****************        end        *********************/
                     fd_maps[events[i].data.fd].u_can_send = 1;
                     //"CGI TESTING : '" << fd_maps[events[i].data.fd].requst.stat_cgi << "'" << std::endl;
                     fd_maps[events[i].data.fd].cgi_.checkifcgi(rq, is_cgi, events[i].data.fd);

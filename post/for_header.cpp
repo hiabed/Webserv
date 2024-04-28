@@ -52,7 +52,7 @@ int request::parseHost(std::string hst, int fd) {
     ip = hst.substr(0, hst.find(':'));
     checkifservername(ip, is_servername);
     port = hst.substr(hst.find(':') + 1);
-    if ((server::check_ip(ip) || server::valid_range(port)) && upload_state == "on") // edited by mhassani;
+    if ((server::check_ip(ip) || server::valid_range(port))) // edited by mhassani;
     {
         std::cout << "1111111111111\n";
         it3->second.resp.response_error("400", fd);

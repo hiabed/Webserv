@@ -28,7 +28,8 @@ ${NAME} : ${OBJ}
 	$(CXX) $(CXXFLAGS) $(OBJ) -o $(NAME)
 
 clean :
-	rm -f ${OBJ} /nfs/homes/mhassani/Desktop/merged_webserv/website/folder/outfile*
+	rm -f ${OBJ} /nfs/homes/mhassani/Desktop/merged_webserv/website/folder/outfile* \
+	rm -f CGI_in-* \
 
 fclean : clean
 	rm -f ${NAME}
