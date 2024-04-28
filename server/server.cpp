@@ -6,6 +6,7 @@ int i = 0;
 
 server::server()
 {
+    max_body = "2147483647";
     duplicate["index"]          = 0;
     duplicate["root"]           = 0;
     duplicate["allow_methods"]  = 0;

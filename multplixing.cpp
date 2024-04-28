@@ -191,6 +191,7 @@ void        multplixing::lanch_server(server parse)
                             }
                             flag = 1;
                         }
+                        /**************** should be checked *********************/
                         else {
                             if (it_fd->second.resp.response_error("400", events[i].data.fd))
                             {
@@ -198,6 +199,7 @@ void        multplixing::lanch_server(server parse)
                                     continue ;
                             }
                         }
+                        /****************        end        *********************/
                     }
                     // print with bold yellow "I AM IN THE READ FUNCTION"
                     //"\033[1;33mI AM IN THE READ FUNCTION\033[0m" << std::endl;
@@ -208,28 +210,30 @@ void        multplixing::lanch_server(server parse)
                     // print the vlue of rq.method + flag + it_fd->second.not_allow_method with bold yellow
                     // //"\033[1;33m" << rq.method << " " << flag << " " << it_fd->second.not_allow_method << "\033[0m" << std::endl;
                     fd_maps[events[i].data.fd].post_.j = 0;
-                    if (fd_maps[events[i].data.fd].requst.upload_state != "on")
+                    if (rq.method == "POST" && flag == 1 && !it_fd->second.not_allow_method)
                     {
-                        if (it_fd->second.resp.response_error("403", events[i].data.fd))
+                        /****************** edited by mhassani ********************/
+                        if (fd_maps[events[i].data.fd].requst.upload_state != "on")
                         {
-                            fd_maps[events[i].data.fd].post_.g = 0;
-                            if (close_fd(events[i].data.fd, epoll_fd))
-                                continue ;
+                            if (it_fd->second.resp.response_error("403", events[i].data.fd))
+                            {
+                                fd_maps[events[i].data.fd].post_.g = 0;
+                                if (close_fd(events[i].data.fd, epoll_fd))
+                                    continue ;
+                            }
                         }
-                    }
-                    if (rq.method == "POST" && flag == 1 && !it_fd->second.not_allow_method && fd_maps[events[i].data.fd].requst.upload_state == "on")
-                    {
-                        // print with bold red "I AM IN THE POST FUNCTION"
-                        // //"\033[1;31mI AM IN THE POST FUNCTION\033[0m" << std::endl;
+                        /********************** end ********************/
                         if (fd_maps[events[i].data.fd].post_.post_method(buffer, events[i].data.fd)  && !it_fd->second.not_allow_method) {
                             fd_maps[events[i].data.fd].post_.j = 1;
                             flag = 0;
                         }
+                        std::cout << fd_maps[events[i].data.fd].post_.g << std::endl;
                         if (fd_maps[events[i].data.fd].post_.g == 1)
                         {
                             //"bad request.\n";
                             if (it_fd->second.resp.response_error("400", events[i].data.fd))
                             {
+                                std::cout << "why?\n";
                                 fd_maps[events[i].data.fd].post_.g = 0;
                                 if (close_fd(events[i].data.fd, epoll_fd))
                                     continue ;
