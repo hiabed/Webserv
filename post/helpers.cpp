@@ -5,10 +5,10 @@ void post::print_keyVal(map m)
     map::iterator it = m.begin();
     while (it != m.end())
     {
-        // std::cout << it->first << ":" << it->second << std::endl;
+        // //it->first << ":" << it->second << std::endl;
         it++;
     }
-    // std::cout << "\n";
+    // //"\n";
 }
 
 std::string post::generateUniqueFilename()

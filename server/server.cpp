@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   server.cpp                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: ayylaaba <ayylaaba@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/02/05 14:46:12 by ayylaaba          #+#    #+#             */
-/*   Updated: 2024/02/15 16:28:31 by ayylaaba         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "../server.hpp"
 #define CYAN    "\033[36m"
 #define RESET   "\033[0m"
@@ -33,7 +21,7 @@ server::server(std::map<std::string, std::string> &cont_s, std::vector<location*
     cont = cont_s;
     l = l_;
     vec_of_locations = vec_of_locations_;
-    // // std::cout << "vec_of_locations size: " << vec_of_locations.size() << "\n";
+    // //"vec_of_locations size: " << vec_of_locations.size() << "\n";
 }
 
 std::string     server::strtrim(std::string &str)
@@ -112,8 +100,11 @@ void        server::mange_file(const char* file)
         str = strtrim(str);
         if (str.empty())
             continue;
+        // std::cout << "'" << str.compare("server") << "'" << "\n";
+        // exit(0);
         if (str.compare("server"))
             print_err("syntaxt_error server");
+        
         std::getline(rd_content, str); // store all servers
         str = strtrim(str);
         if (!str.compare("{"))
@@ -149,12 +140,11 @@ void           server::message_response_stat()
         response_message["404"] = "Not Found";
         response_message["405"] = "Method Not Allowed";
         response_message["415"] = "Unsupported Media Type";
-        response_message["413"] = "Request Entity Too Large";
-        response_message["501"] = "Not Implemented";
-        response_message["502"] = "Bad Gateway";
-        response_message["503"] = "Service Unavailable";
+        // response_message["501"] = "Not Implemented";
+        // response_message["502"] = "Bad Gateway";
+        // response_message["503"] = "Service Unavailable";
         response_message["504"] = "Gateway Timeout";
-        response_message["505"] = "HTTP Version Not Supported";
+        // response_message["505"] = "HTTP Version Not Supported";
         response_message["500"] = "Internal Server Error";
         return ;
 }
@@ -214,10 +204,10 @@ int        server::parse_loca(std::ifstream& rd_cont, std::string &str_)
         if (!str_l_vec[0].compare("location"))
         {
             check_size(str_l_vec, 'l');
-            // // std::cout << "location after normale = " << controle_slash(str_l_vec[1]) << "\n";
+            // //"location after normale = " << controle_slash(str_l_vec[1]) << "\n";
             vec_of_locations.push_back(controle_slash(str_l_vec[1]));
             cont_l[str_l_vec[0]]    = controle_slash(str_l_vec[1]); // store location with its path
-            // // std::cout << CYAN << "cont_l = " << cont_l[str_l_vec[0]] << "value = " << str_l_vec[1] << RESET << "\n";
+            // //CYAN << "cont_l = " << cont_l[str_l_vec[0]] << "value = " << str_l_vec[1] << RESET << "\n";
             return 1 ;
         }
         else
@@ -294,7 +284,7 @@ int    server::parse_both(std::ifstream& rd_cont, std::string &str_)
                 {
                     check_size(s_vec, 'l'); // check first loca's path
                     vec_of_locations.push_back(controle_slash(s_vec[1]));
-                    // // std::cout << "first location after normal = " << controle_slash(s_vec[1]) << "\n";
+                    //"first location after normal = " << controle_slash(s_vec[1]) << "\n";
                     cont_l[s_vec[0]] = controle_slash(s_vec[1]);
                     std::getline(rd_cont, str_);
                     str = strtrim(str);
@@ -329,7 +319,7 @@ int    server::parse_both(std::ifstream& rd_cont, std::string &str_)
 int        server::check_stat(std::string &stat_error)
 {
     if (stat_error.compare("403") && stat_error.compare("404") && 
-    stat_error.compare("301") && stat_error.compare("500")) // you should add more i think ...
+    stat_error.compare("301") && stat_error.compare("500") && stat_error.compare("504")) // you should add more i think ...
         return 1;
     return 0;
 }

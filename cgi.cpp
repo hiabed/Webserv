@@ -4,7 +4,7 @@
 extern std::map<int, Client> fd_maps;
 
 cgi::cgi(){
-    // // std::cout << "Cgi Constructor \n";
+    // // //"Cgi Constructor \n";
 }
 
 void        cgi::fill_env_cgi(Client &obj)
@@ -49,11 +49,11 @@ void        cgi::cgi_work(int fd)
 
 // void     cgi::get_exten_type(int fd)
 // {s
-//     // std::cout << "\nCGI Function"<< "\n";
+//     // //"\nCGI Function"<< "\n";
 //     std::string exten;
 //     size_t      pos = it->second.requst.uri.find_last_of(".");
 
-//     // std::cout << "uri = " << it->second.requst.uri << "\n";
+//     // //"uri = " << it->second.requst.uri << "\n";
 
 //     exten = it->second.requst.uri.substr(pos + 1);
 
@@ -61,8 +61,8 @@ void        cgi::cgi_work(int fd)
 //     std::map<std::string, std::string>::iterator it_end = it->second.serv_.cgi_map.end();
 //     while (it_bi != it_end)
 //     {
-//         // std::cout << "first = " << it_bi->first << "\n";
-//         // std::cout << "second = " << it_bi->second << "\n";
+//         // //"first = " << it_bi->first << "\n";
+//         // //"second = " << it_bi->second << "\n";
 //         it_bi++;
 //     }
 //     exit (21);
@@ -73,8 +73,8 @@ void        cgi::cgi_work(int fd)
 //         cgi_stat = "static_file";
 //     if (b_conf != it->second.serv_.cgi_map.end())
 //         cgi_stat = "cgi_state";
-//     // std::cout << "exten == " << exten << "\n";
-//     // std::cout << "cgi_stat == " << cgi_stat << "\n";
+//     // //"exten == " << exten << "\n";
+//     // //"cgi_stat == " << cgi_stat << "\n";
 //     exit (20);
 // }
 
@@ -82,7 +82,7 @@ void    cgi::checkifcgi(request& rq, int& iscgi, int fd) {
     std::string path = rq.uri;
     std::string::iterator it = path.begin() + path.find_last_of("/") + 1;
     if (it == path.end()) {
-        // std::cout << "\033[1;38;5;201mTHIS IS NOT CGI, THIS IS A FOLDER\033[0m" << std::endl;
+        // //"\033[1;38;5;201mTHIS IS NOT CGI, THIS IS A FOLDER\033[0m" << std::endl;
         iscgi = 0;
         stat_cgi = 0;
         return ;
@@ -94,7 +94,7 @@ void    cgi::checkifcgi(request& rq, int& iscgi, int fd) {
         stat_cgi = 1;
         compiler = fd_maps[fd].requst.cgi_map[file.substr(file.find_last_of(".") + 1)];
         extension = file.substr(file.find_last_of(".") + 1);
-        // std::cout << "\033[1;38;5;82mTHIS IS CGI, yaaaY " << compiler << "\033[0m" << std::endl;
+        // //"\033[1;38;5;82mTHIS IS CGI, yaaaY " << compiler << "\033[0m" << std::endl;
     }
 }
 
@@ -114,7 +114,7 @@ char **cgi::fillCgiEnv(int fd) {
 }
 
 void    cgi::cgi_method(request& rq, int fd) {
-    // std::cout << "\033[1;31mI AM ABOUT TO FORK\033[0m" << std::endl;
+    // //"\033[1;31mI AM ABOUT TO FORK\033[0m" << std::endl;
     std::stringstream iss;
     iss << time(NULL);
     std::string name;
@@ -137,7 +137,7 @@ void    cgi::cgi_method(request& rq, int fd) {
         std::cerr << "\033[1;31mI AM IN THE CHILD PROCCESS\033[0m" << std::endl;
         kill(getpid(), 2);
     }
-    // std::cout << "\033[1;33m-----------------------------------\033[0m" << std::endl;
+    // //"\033[1;33m-----------------------------------\033[0m" << std::endl;
 }
 
 cgi::~cgi(){

@@ -48,6 +48,9 @@ int            request::check_path_access(std::string path)
     return (0);
 }
 
+// mhassani static variable;
+static int count = 0;
+//////////////////////////
 int            request::parse_req(std::string   rq, server &server, int fd) // you can remove the server argenent
 {
     if (parse_heade(rq, server, fd) == 1)
@@ -59,11 +62,40 @@ int            request::parse_req(std::string   rq, server &server, int fd) // y
     vec           = server.isolate_str(rq.substr(0, last) , ' ');
     method        = vec[0];
     path          = vec[1];
+    // std::cout << path << std::endl;
     http_version  = vec[2];    
     it->second.resp.response_message = server.response_message;
-    uri = get_full_uri(server, it->second); //
-    x = it->second.get.check_exist(uri);
+    if (path == "/favicon.ico")
+    {
+        state = it->second.resp.response_error("204", fd);
+        it->second.not_allow_method = 1;
+        return 0;
+    }
+    /********************* edited by mhassani *****************/
 
+    count++;
+    std::string CGI_input;
+    std::stringstream ss;
+    ss << count;
+    std::string countAsString;
+    ss >> countAsString;
+    uri = get_full_uri(server, it->second); //
+    if (uri.rfind("?") != std::string::npos)
+        CGI_input = uri.substr(uri.rfind("?"));
+    std::ofstream outFile(("CGI_in-" + countAsString).c_str());
+    if (!outFile.is_open())
+    {
+        std::cerr << "error opening the file.\n";
+        // return -1;
+    }
+    outFile << CGI_input;
+    outFile.close();
+    if (uri.rfind("?") != std::string::npos)
+        uri.erase(uri.rfind("?"), CGI_input.length());
+
+    // std::cout << "uri: " << uri << std::endl;
+    /********************* end **********************/
+    x = it->second.get.check_exist(uri);
     if (redirection_stat == 1) // 0000
     {
         std::string msg = "HTTP/1.1 301 Moved Permanently\r\nlocation: " + it->second.redirec_path + "\r\n\r\n";
@@ -142,7 +174,6 @@ std::string     request::get_full_uri(server &server, Client& obj)
     if (longest_loca == "move_permently")
     {
         obj.redirec_path = path + "/";
-        // std::cout << "redirection path = " << obj.redirec_path << std::endl;
         redirection_stat = 1;
         return("move_permently");
     }
@@ -196,6 +227,7 @@ int           request::rewrite_location(std::map<std::string, std::string> locat
             if (!rest_fldr.empty()) // rest 3amr
             {
                 full_path = (*it_b).second + "/" + rest_fldr;
+                //"full_path = " << full_path << "\n";
                 check = 1;
                 return 1;
             }

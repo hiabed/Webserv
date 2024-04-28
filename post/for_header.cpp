@@ -52,9 +52,9 @@ int request::parseHost(std::string hst, int fd) {
     ip = hst.substr(0, hst.find(':'));
     checkifservername(ip, is_servername);
     port = hst.substr(hst.find(':') + 1);
+    if (server::check_ip(ip) || server::valid_range(port))
+        it3->second.resp.response_error("400", fd);
     if (port == "" || hst.find_first_of(':') == std::string::npos) {
-        // print with wave red "port is empty"
-    // std::cout << "\033[5m\033[38;5;208mPORT IS EMPTY: '" << port << "'\033[0m" << std::endl;
         it3->second.resp.response_error("400", fd);
         multplixing::close_fd(fd, fd_maps[fd].epoll_fd);
         isfdclosed = true;
