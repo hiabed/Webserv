@@ -25,12 +25,8 @@
 
 # define MAX_EVENTS 1024
 # define BUFFER_SIZE 1024
-# define MAX_TIME 20
+# define MAX_TIME 15
 
-// struct garbage_s {
-//     void *ptr;
-//     garbage_s* next;
-// }
 
 extern int isfdclosed;
 
@@ -49,5 +45,7 @@ class multplixing
         };
 };
 
+
+int  cgiresponse(int fd);
 
 #endif

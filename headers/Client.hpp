@@ -24,6 +24,8 @@ class response;
 class Client
 {
     public:
+        std::string                         buf;
+        int                                 join_readbytes;
         int                                 epoll_fd;
         std::map<std::string, std::string>  response_message;
         int                                 res_header;
@@ -37,6 +39,7 @@ class Client
         int                                 version_not_suported;
         int                                 file_not_supported;
         std::streampos                      filePosition;
+        int                                 is_cgi;
         get_method                          get;
         request                             requst;
         response                            resp;
@@ -45,6 +48,11 @@ class Client
         delete_                             delet;
         cgi                                 cgi_;
         time_t                              start_time;
+        int                                 flagg;
+        int                                 err;
+        int                                 cgi_post;
+        int                                 f;
+        std::map<std::string, std::string>  err_page;
         Client(std::string uri_);
         Client(const Client& copy);
         std::map<std::string, std::string>  message_response_stat();

@@ -1,12 +1,14 @@
-#include "multplixing.hpp"
+#include "headers/multplixing.hpp"
 
 #define MAX_CLIENTS 
 
-extern std::map<int, Client>  fd_maps; 
+extern std::map<int, Client *>  fd_maps; 
 extern std::map<int, std::vector<server*>::iterator> server_history;
 extern std::map<int, int> client_history;
+std::vector<void *> garbage;
 int isfdclosed;
 int flag = 0;
+
 
 
 in_addr_t multplixing::convertIpv4toBinary(const std::string& ip) {
@@ -25,18 +27,12 @@ in_addr_t multplixing::convertIpv4toBinary(const std::string& ip) {
     return htonl(addr);
 }
 
-
-
 int        multplixing::close_fd(int fd, int epll)
 {
-    //"Client " << fd << " Was Removed From Map\n";
-    //"it is Done\n";
-
     epoll_ctl(epll, EPOLL_CTL_DEL, fd , NULL);
     fd_maps.erase(fd_maps.find(fd));
-    //"THE VALUE OF FD:" << fd << std::endl;
     close(fd);
-    // exit(120);
+    delete fd_maps[fd];
     return 1;
 }
 
@@ -54,7 +50,7 @@ void        multplixing::lanch_server(server parse)
     std::vector<server*>::iterator it;
     time_t  end;
     cgi cgi_;
-    int is_cgi;
+    
     bool check_cgi = false;
 
     epoll_fd = epoll_create(5);
@@ -116,15 +112,11 @@ void        multplixing::lanch_server(server parse)
         std::vector<int>::iterator it;
 
         signal(SIGPIPE, SIG_IGN); // magic this line ignore sigpip when you write to close fd the program exit by sigpip sign
-        //"whyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\n";
         int num = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
         for (int i = 0; i < num; i++) {
-            is_cgi = 0;
             check_cgi = false;
             isfdclosed = false;
             if ((it = std::find(serverSocket.begin(), serverSocket.end(), events[i].data.fd)) != serverSocket.end()) {
-                //"BEFORE CLIENT FD VALUE :" << events[i].data.fd << std::endl;
-                //"New Client Connected\n";
                 int client_socket = accept(*it, NULL, NULL);
                 struct epoll_event envts_client;
                 envts_client.data.fd = client_socket;
@@ -135,154 +127,187 @@ void        multplixing::lanch_server(server parse)
                     perror("Issue In Adding Client To Epoll");
                     exit(1);
                 }
-                fd_maps[client_socket] = Client();
-                fd_maps[client_socket].serv_      = parse;
-                client_history[client_socket]     = *it;
-                fd_maps[client_socket].cgi_       = cgi_;
-                fd_maps[client_socket].epoll_fd   = epoll_fd;
-                fd_maps[client_socket].start_time = time(NULL);
-                //"AFTER CLIENT FD VALUE :" << events[i].data.fd << std::endl;
-                //"Client " << client_socket << " Added To Map\n";
+                fd_maps[client_socket]             = new Client();
+                fd_maps[client_socket]->serv_      = parse;
+                client_history[client_socket]      = *it;
+                fd_maps[client_socket]->cgi_       = cgi_;
+                fd_maps[client_socket]->epoll_fd   = epoll_fd;
+                fd_maps[client_socket]->is_cgi     = 0;
+                fd_maps[client_socket]->start_time = time(NULL);
+                fd_maps[client_socket]->flagg      = 0;
+                fd_maps[client_socket]->err        = 0;
+                fd_maps[client_socket]->cgi_post   = 0;
+                fd_maps[client_socket]->f          = 0;
             }
             else {
-
-                std::map<int, Client>::iterator it_fd = fd_maps.find(events[i].data.fd);
-                //"Client with an event :" << events[i].data.fd << std::endl;
+                end = time(NULL);
+                std::map<int, Client *>::iterator it_fd = fd_maps.find(events[i].data.fd);
                 if (events[i].events & EPOLLRDHUP || events[i].events & EPOLLERR  || events[i].events & EPOLLHUP) 
                 {
                     if (close_fd( events[i].data.fd, epoll_fd ))
                         continue ;
                 }
-                else if (events[i].events & EPOLLIN)
-                {
-                    fd_maps[events[i].data.fd].cgi_.stat_cgi = 0;
-                    //"FD READY TO READ -_- = " << events[i].data.fd << " \n";
-                    buffer.resize(BUFFER_SIZE);
-                    bytesRead = recv(events[i].data.fd , &buffer[0], BUFFER_SIZE, 0);
-                    //"\n\n\t -> bytesRead ==== " << bytesRead << std::endl;
-                    if (bytesRead > 0)
-                        buffer.resize(bytesRead);
-                    if (bytesRead <= 0)
-                    {
-                       if (close_fd( events[i].data.fd, epoll_fd ))
+                if ((difftime(end, fd_maps[events[i].data.fd]->start_time) > MAX_TIME) /*&& fd_maps[events[i].data.fd]->istimeout */) {
+                    if (fd_maps[events[i].data.fd]->resp.response_error("408", events[i].data.fd)) {
+                        if (close_fd(events[i].data.fd, epoll_fd))
                             continue ;
                     }
-                    // //buffer << "\n";
-
-                    if (flag == 0)
+                }
+                else if (events[i].events & EPOLLIN)
+                {
+                    fd_maps[events[i].data.fd]->cgi_.stat_cgi = 0;
+                    buffer.resize(BUFFER_SIZE);
+                    bytesRead = recv(events[i].data.fd , &buffer[0], BUFFER_SIZE, 0);
+                    if (!fd_maps[events[i].data.fd]->flagg)
                     {
-                        if (buffer.find("\r\n\r\n") != std::string::npos)
+                        fd_maps[events[i].data.fd]->buf += buffer;
+                        fd_maps[events[i].data.fd]->join_readbytes += bytesRead;
+                    }
+                    else
+                    {
+                        fd_maps[events[i].data.fd]->buf = buffer;
+                        fd_maps[events[i].data.fd]->join_readbytes = bytesRead;
+                    }
+                    if (bytesRead > 0)
+                        fd_maps[events[i].data.fd]->buf.resize(fd_maps[events[i].data.fd]->join_readbytes);
+                    if (bytesRead == -1 || bytesRead == 0)
+                    {
+                        if (close_fd( events[i].data.fd, epoll_fd ))
+                            continue ;
+                    }
+                    if (bytesRead > 1)
+                        fd_maps[events[i].data.fd]->start_time = time(NULL);
+
+                    if (!fd_maps[events[i].data.fd]->flagg)
+                    {
+                        if (fd_maps[events[i].data.fd]->buf.find("\r\n\r\n") != std::string::npos)
                         {
-                            if (rq.parse_req(buffer, parse, events[i].data.fd ) == 1) {
+                            fd_maps[events[i].data.fd]->flagg = 1;
+                            if (rq.parse_req(fd_maps[events[i].data.fd]->buf, parse, events[i].data.fd ) == 1) {
                                         continue ;
-                            };
+                            }
                             if (isfdclosed)
                                 continue;
-                            fd_maps[events[i].data.fd].requst     = rq;
-                            fd_maps[events[i].data.fd].resp       = resp_;
-                            //" stat = " << it_fd->second.not_allow_method << "\n";
-                            if (it_fd->second.not_allow_method)
+                            fd_maps[events[i].data.fd]->requst     = rq;
+                            fd_maps[events[i].data.fd]->resp       = resp_;
+                            if (it_fd->second->not_allow_method)
                             {
-                                it_fd->second.not_allow_method      = 0;
-                                //print with vold red "I AM DEAD"
-                                //"\033[1;31mI AM DEAD\033[0m" << std::endl;
+                                it_fd->second->not_allow_method      = 0;
                                 if (close_fd(events[i].data.fd, epoll_fd))
                                     continue ;
                             }
-                            flag = 1;
                         }
-                        /**************** should be checked *********************/
+                        else if (fd_maps[events[i].data.fd]->buf.find("\r\n\r\n") == std::string::npos && !fd_maps[events[i].data.fd]->flagg)
+                        {
+                            continue;
+                        }
                         else {
-                            if (it_fd->second.resp.response_error("400", events[i].data.fd))
-                            {
-                                if (close_fd( events[i].data.fd, epoll_fd ))
-                                    continue ;
+                            time_t end1 = time(NULL);
+                            if ((difftime(end1, fd_maps[events[i].data.fd]->start_time) > MAX_TIME)) {
+                                if (fd_maps[events[i].data.fd]->resp.response_error("408", events[i].data.fd)) {
+                                    if (close_fd(events[i].data.fd, epoll_fd))
+                                        continue ;
+                                }
                             }
                         }
-                        /****************        end        *********************/
+                    }
+                    if (!fd_maps[events[i].data.fd]->requst.stat_cgi.compare("on"))
+                        fd_maps[events[i].data.fd]->cgi_.checkifcgi(rq, fd_maps[events[i].data.fd]->is_cgi, events[i].data.fd);
+                    else if (!fd_maps[events[i].data.fd]->requst.stat_cgi.compare("off")){
+                        if (fd_maps[events[i].data.fd]->resp.response_error("403", events[i].data.fd)) {
+                            if (close_fd(events[i].data.fd, epoll_fd))
+                                continue ;
+                        }
                     }
                     /**************** FOR POST METHOD *********************/
-
-                    fd_maps[events[i].data.fd].post_.g = 0;
-                    fd_maps[events[i].data.fd].post_.j = 0;
-                    if (rq.method == "POST" && flag == 1 && !it_fd->second.not_allow_method)
+                    fd_maps[events[i].data.fd]->post_.g = 0;
+                    fd_maps[events[i].data.fd]->post_.j = 0;
+                    if (rq.method == "POST" && fd_maps[events[i].data.fd]->flagg == 1 && !it_fd->second->not_allow_method)
                     {
-                        /****************** edited by mhassani ********************/
-                        if (fd_maps[events[i].data.fd].requst.upload_state != "on")
+                        if (fd_maps[events[i].data.fd]->is_cgi)
                         {
-                            if (it_fd->second.resp.response_error("403", events[i].data.fd))
+                            std::cout  << "------------ CGI POST ENTER -----------\n";
+                            if (fd_maps[events[i].data.fd]->post_.post_method(fd_maps[events[i].data.fd]->buf, events[i].data.fd)  && !it_fd->second->not_allow_method)
                             {
-                                fd_maps[events[i].data.fd].post_.g = 0;
+                                fd_maps[events[i].data.fd]->post_.j = 1;
+                                fd_maps[events[i].data.fd]->cgi_post = 1;
+                                fd_maps[events[i].data.fd]->flagg = 0;
+                            }
+                        }
+                        if (fd_maps[events[i].data.fd]->requst.upload_state != "on" && !fd_maps[events[i].data.fd]->is_cgi)
+                        {
+                            if (it_fd->second->resp.response_error("403", events[i].data.fd))
+                            {
+                                fd_maps[events[i].data.fd]->post_.g = 0;
                                 if (close_fd(events[i].data.fd, epoll_fd))
                                     continue ;
                             }
                         }
-                        /********************** end ********************/
-                        if (fd_maps[events[i].data.fd].post_.post_method(buffer, events[i].data.fd)  && !it_fd->second.not_allow_method) {
-                            fd_maps[events[i].data.fd].post_.j = 1;
-                            flag = 0;
-                        }
-                        std::cout << fd_maps[events[i].data.fd].post_.g << std::endl;
-                        if (fd_maps[events[i].data.fd].post_.g == 1)
+                        if (fd_maps[events[i].data.fd]->post_.post_method(fd_maps[events[i].data.fd]->buf, events[i].data.fd)  && !it_fd->second->not_allow_method && !fd_maps[events[i].data.fd]->is_cgi)
                         {
-                            //"bad request.\n";
-                            if (it_fd->second.resp.response_error("400", events[i].data.fd))
+                            fd_maps[events[i].data.fd]->post_.j = 1;
+                            fd_maps[events[i].data.fd]->flagg = 0;
+                        }
+                        if (fd_maps[events[i].data.fd]->post_.g == 1)
+                        {
+                            if (it_fd->second->resp.response_error("400", events[i].data.fd))
                             {
-                                std::cout << "why?\n";
-                                fd_maps[events[i].data.fd].post_.g = 0;
+                                fd_maps[events[i].data.fd]->post_.g = 0;
                                 if (close_fd(events[i].data.fd, epoll_fd))
                                     continue ;
                             }
                         }
-                        else if (fd_maps[events[i].data.fd].post_.g == 2)
+                        else if (fd_maps[events[i].data.fd]->post_.g == 2) // unsupported media type;
                         {
-                            // //"g value is: " << fd_maps[events[i].data.fd].post_.g << std::endl;
-                            //"415 error message\n";
-                            if (it_fd->second.resp.response_error("415", events[i].data.fd))
+                            if (it_fd->second->resp.response_error("415", events[i].data.fd))
                             {
-                                fd_maps[events[i].data.fd].post_.g = 0;
+                                fd_maps[events[i].data.fd]->post_.g = 0;
                                 if (close_fd(events[i].data.fd, epoll_fd))
                                     continue ;
                             }
                         }
-                        else if (fd_maps[events[i].data.fd].post_.g == 3)
+                        else if (fd_maps[events[i].data.fd]->post_.g == 3)
                         {
                             //"413 error message\n";
-                            // //"g value is: " << fd_maps[events[i].data.fd].post_.g << std::endl;
-                            if (it_fd->second.resp.response_error("413", events[i].data.fd))
+                            if (it_fd->second->resp.response_error("413", events[i].data.fd))
                             {
-                                //"enter to 413\n";
-                                fd_maps[events[i].data.fd].post_.g = 0;
+                                fd_maps[events[i].data.fd]->post_.g = 0;
+                                if (close_fd(events[i].data.fd, epoll_fd))
+                                    continue ;
+                            }
+                        }
+                        else if (fd_maps[events[i].data.fd]->post_.g == 4) // Not implemented.
+                        {
+                            if (it_fd->second->resp.response_error("501", events[i].data.fd))
+                            {
+                                fd_maps[events[i].data.fd]->post_.g = 0;
                                 if (close_fd(events[i].data.fd, epoll_fd))
                                     continue ;
                             }
                         }
                     }
                     /****************        end        *********************/
-                    fd_maps[events[i].data.fd].u_can_send = 1;
-                    //"CGI TESTING : '" << fd_maps[events[i].data.fd].requst.stat_cgi << "'" << std::endl;
-                    fd_maps[events[i].data.fd].cgi_.checkifcgi(rq, is_cgi, events[i].data.fd);
-                    // print with bold blue the value of is_cgi + !fd_maps[events[i].data.fd].requst.stat_cgi.compare("on") + fd_maps[events[i].data.fd].post_.j == 1
-                    //"\033[1;34m" << is_cgi << " " << fd_maps[events[i].data.fd].requst.stat_cgi << " " << !check_cgi << "\033[0m" << std::endl;
-                    if (!fd_maps[events[i].data.fd].requst.stat_cgi.compare("on") && is_cgi && !check_cgi) {
-                            fd_maps[events[i].data.fd].cgi_.cgi_method(rq, events[i].data.fd);
+                    fd_maps[events[i].data.fd]->u_can_send = 1;
+                    //"CGI TESTING : '" << fd_maps[events[i].data.fd]->requst.stat_cgi << "'" << std::endl;
+                    if (fd_maps[events[i].data.fd]->is_cgi && !check_cgi) {
+                        if (fd_maps[events[i].data.fd]->cgi_post && !fd_maps[events[i].data.fd]->requst.method.compare("POST")) {
+                            fd_maps[events[i].data.fd]->cgi_.cgi_method(rq, events[i].data.fd);
+                        }
+                        else if (!fd_maps[events[i].data.fd]->requst.method.compare("GET"))
+                            fd_maps[events[i].data.fd]->cgi_.cgi_method(rq, events[i].data.fd);
                         check_cgi = true;
                     }
                 }
-                else if (events[i].events & EPOLLOUT && !it_fd->second.rd_done && it_fd->second.u_can_send) // must not always enter to here i think ask about it 
+                else if (events[i].events & EPOLLOUT && !it_fd->second->rd_done && it_fd->second->u_can_send) // must not always enter to here i think ask about it 
                 {
-                    flag = 0;
-                    //"ready  writing " << " \n";
                     respo = 0;
-                    if (!fd_maps[events[i].data.fd].requst.method.compare("GET"))
-                        respo = (*it_fd).second.get.get_mthod(events[i].data.fd);
+                    if (!fd_maps[events[i].data.fd]->requst.method.compare("GET"))
+                        respo = (*it_fd).second->get.get_mthod(events[i].data.fd);
                     if (isfdclosed)
-                    {
                         continue;
-                    }
-                    if (!fd_maps[events[i].data.fd].requst.method.compare("DELETE"))
+                    if (!fd_maps[events[i].data.fd]->requst.method.compare("DELETE"))
                     {
-                        std:: string res_delete = (*it_fd).second.delet.delet_method((*it_fd).second.requst.uri, (*it_fd).second.serv_, events[i].data.fd);
+                        std:: string res_delete = (*it_fd).second->delet.delet_method((*it_fd).second->requst.uri, (*it_fd).second->serv_, events[i].data.fd);
                         if (!res_delete.compare("delete_stat"))
                         {
                              if (close_fd( events[i].data.fd, epoll_fd ))
@@ -290,41 +315,38 @@ void        multplixing::lanch_server(server parse)
                         }
                         else if (!res_delete.compare("delete"))
                         {
-                            if (it_fd->second.resp.response_error("204", events[i].data.fd))
+                            if (it_fd->second->resp.response_error("204", events[i].data.fd))
                             {
                                 if (close_fd( events[i].data.fd, epoll_fd ))
                                     continue ;
                             }
                         }
                     }
-                    if (!fd_maps[events[i].data.fd].requst.method.compare("POST") && fd_maps[events[i].data.fd].post_.j)
+                    if (!fd_maps[events[i].data.fd]->requst.method.compare("POST") && fd_maps[events[i].data.fd]->post_.j && !fd_maps[events[i].data.fd]->is_cgi)
                     {
-                        std::string response = "HTTP/1.1 201 OK\r\nContent-Type: text/html\r\n\r\nhello";
-                        send(events[i].data.fd,response.c_str(), response.length(), 0);
+                        fd_maps[events[i].data.fd]->post_.j = 0;
+                        if (it_fd->second->resp.response_error("201", events[i].data.fd) && !fd_maps[events[i].data.fd]->is_cgi)
+                        {
+                            if (close_fd( events[i].data.fd, epoll_fd ))
+                                continue ;
+                        }
+                        
                         respo = 1;
                     }
-                    //"\t\t stat kaml wla ba9i == "      << it_fd->second.rd_done << std::endl;
-                    //"\t\t second.not_allow_method == " << it_fd->second.not_allow_method<< std::endl;
-                    if (respo || it_fd->second.not_allow_method)
+                    else if (!fd_maps[events[i].data.fd]->requst.method.compare("POST") && fd_maps[events[i].data.fd]->post_.j && fd_maps[events[i].data.fd]->is_cgi) {
+                        respo = cgiresponse(events[i].data.fd);
+                        if (isfdclosed)
+                            continue;
+                    }
+                    if (respo || it_fd->second->not_allow_method)
                     {
-                        it_fd->second.not_allow_method = 0;
-                        //"\t\t SF KAML GHADI UTM7A HAD "  << events[i].data.fd << std::endl;
+                        it_fd->second->not_allow_method = 0;
                         if (close_fd( events[i].data.fd, epoll_fd ))
                             continue ;
                     }
                 }
-                else {
-                    end = time(NULL);
-                    if (difftime(end, fd_maps[events[i].data.fd].start_time) > MAX_TIME) {
-                        fd_maps[events[i].data.fd].resp.response_error("408", events[i].data.fd);
-                        close_fd(events[i].data.fd, epoll_fd);
-                        
-                        continue;
-                    }
-                }
+                
             }
         }
     }
 }
-
-

@@ -1,12 +1,13 @@
-#include "../server.hpp"
+#include "../headers/server.hpp"
 #define CYAN    "\033[36m"
 #define RESET   "\033[0m"
 
 int i = 0;
+extern std::vector<void *> garbage;
 
 server::server()
 {
-    max_body = "2147483647";
+    max_body = "9223372036854775807";
     duplicate["index"]          = 0;
     duplicate["root"]           = 0;
     duplicate["allow_methods"]  = 0;
@@ -17,12 +18,23 @@ server::server()
     message_response_stat();
 }
 
-server::server(std::map<std::string, std::string> &cont_s, std::vector<location*> &l_, std::vector<std::string> &vec_of_locations_)
+server::server(std::map<std::string, std::string> &cont_s, std::vector<location*> &l_, std::vector<std::string> &vec_of_locations_, std::string &max_bdy, std::map<std::string, std::string> &err)
 {
+    err_page = err;
+    max_body = max_bdy;
     cont = cont_s;
     l = l_;
     vec_of_locations = vec_of_locations_;
-    // //"vec_of_locations size: " << vec_of_locations.size() << "\n";
+}
+
+int         server::check_forbidden(std::string path_)
+{
+    for (size_t i = 0; i < path_.size(); i++)
+    {
+       if (/*path_[i] == '?' || */ path_[i] == '=' || path_[i] == '[' || path_[i] == ']' || path_[i] == '@' || path_[i] == '&' || path_[i] == '%' || path_[i] == '*' || path_[i] == '$' || path_[i] == '#' || path_[i] == '<' || path_[i] == '>' || path_[i] == '|')
+            return 1;
+    }
+    return 0;
 }
 
 std::string     server::strtrim(std::string &str)
@@ -41,8 +53,8 @@ std::string     server::strtrim(std::string &str)
 
 void            server::print_err(std::string str)
 {
-    std::cout << str << std::endl;
-    exit(1);
+    std::cerr << str << std::endl;
+    exit(EXIT_FAILURE);
 }
 
 std::vector<std::string>    server::isolate_str(std::string s, char deli)
@@ -90,32 +102,67 @@ void        server::check_duplicate_location(std::vector<std::string> s)
     }
 }
 
+void        server::check_coment(const char* file_)
+{
+    std::string str;
+    std::ifstream new_red(file_);
+
+    while (std::getline(new_red, str))
+    {
+        if (str[0] != '#')
+            return ;
+    }
+    if (new_red.eof())
+        print_err("Empty File");
+}
+
+void        server::check_empty(const char* file_)
+{
+    std::ifstream new_red(file_);
+
+    // read a character
+    char c;
+    std::string str;
+    new_red.read(&c, 1);
+    if (new_red.eof())
+        print_err("Empty File");
+    while (std::getline(new_red, str))
+    {
+        if (str[0] != '#' && !isWhitespace(str))
+            return ;
+    }
+    if (new_red.eof())
+        print_err("Empty File");
+}
 void        server::mange_file(const char* file)
 {
     std::ifstream   rd_content(file);
     s_token = 0;
     obj.l_token = 0;
-
+    check_empty(file);
+    check_coment(file);
     while (std::getline(rd_content, str)) // loop to get lines
     {
         str = strtrim(str);
-        if (str.empty())
+        if (str.empty() || isWhitespace(str) || str[0] == '#')
             continue;
-        // std::cout << "'" << str.compare("server") << "'" << "\n";
-        // exit(0);
         if (str.compare("server"))
             print_err("syntaxt_error server");
-        
         std::getline(rd_content, str); // store all servers
         str = strtrim(str);
         if (!str.compare("{"))
         {
             s_token++;
-            parse_both(rd_content,str);
-            if ((!str.compare("}") && s_token == 1))
+            int g = parse_both(rd_content, str);
+            // parse_both(rd_content,str);
+            if ((g == 2 && s_token == 2))
             {
                 check_duplicate_location(vec_of_locations);
-                s.push_back(new server(cont, l, vec_of_locations));
+                // if (atol(max_body.c_str()) < 0)
+                //     max_body = "2147483647"; // ask later
+                server *new_s = new server(cont, l, vec_of_locations, max_body, err_page);
+                s.push_back(new_s);
+                garbage.push_back(new_s);
                 cont.clear();
                 l.clear();
                 vec_of_locations.clear();
@@ -129,23 +176,24 @@ void        server::mange_file(const char* file)
 void           server::message_response_stat()
 {
         response_message["200"] = "OK";
-        // response_message["201"] = "Created";
-        // response_message["202"] = "Accepted";
+        response_message["201"] = "Created";
+        response_message["202"] = "Accepted";
         response_message["204"] = "No Content";
         response_message["301"] = "Moved Permanently";
-        // response_message["302"] = "Found";
-        // response_message["304"] = "Not Modified";
+        response_message["408"] = "Request Timeout";
+        response_message["302"] = "Found";
+        response_message["304"] = "Not Modified";
         response_message["400"] = "Bad Request";
-        // response_message["401"] = "Unauthorized";
+        response_message["401"] = "Unauthorized";
         response_message["403"] = "Forbidden";
         response_message["404"] = "Not Found";
         response_message["405"] = "Method Not Allowed";
         response_message["415"] = "Unsupported Media Type";
-        // response_message["501"] = "Not Implemented";
-        // response_message["502"] = "Bad Gateway";
-        // response_message["503"] = "Service Unavailable";
+        response_message["501"] = "Not Implemented";
+        response_message["502"] = "Bad Gateway";
+        response_message["503"] = "Service Unavailable";
         response_message["504"] = "Gateway Timeout";
-        // response_message["505"] = "HTTP Version Not Supported";
+        response_message["505"] = "HTTP Version Not Supported";
         response_message["500"] = "Internal Server Error";
         return ;
 }
@@ -184,7 +232,9 @@ int        server::parse_loca(std::ifstream& rd_cont, std::string &str_)
                 // make map that store path location and root , you have root_
                 handl_loca(cont_l, v_s, _root);
                 cgi_extention();
-                l.push_back(new location(cont_l, v_s, cgi_map, redirction_path));
+                location *new_l = new location(cont_l, v_s, cgi_map, redirction_path);
+                l.push_back(new_l);
+                garbage.push_back(new_l);
                 check_dup();
                 cont_l.clear();
                 redirction_path.clear();
@@ -199,23 +249,27 @@ int        server::parse_loca(std::ifstream& rd_cont, std::string &str_)
     if (obj.l_token == 2)
     {
         obj.l_token = 0;
-        std::getline(rd_cont, str_l);
-        str_l = strtrim(str_l);
-        str_l_vec = isolate_str(str_l, ' ');
-        if (!str_l_vec[0].compare("location"))
+        while (std::getline(rd_cont, str_l))
         {
-            check_size(str_l_vec, 'l');
-            // //"location after normale = " << controle_slash(str_l_vec[1]) << "\n";
-            vec_of_locations.push_back(controle_slash(str_l_vec[1]));
-            cont_l[str_l_vec[0]]    = controle_slash(str_l_vec[1]); // store location with its path
-            // //CYAN << "cont_l = " << cont_l[str_l_vec[0]] << "value = " << str_l_vec[1] << RESET << "\n";
-            return 1 ;
+            str_l = strtrim(str_l);
+            str_l_vec = isolate_str(str_l, ' '); // }
+            if (isWhitespace(str_l) || str_l.empty()) // modify
+                continue;
+            if (!str_l_vec[0].compare("location"))
+            {
+                check_size(str_l_vec, 'l');
+                vec_of_locations.push_back(controle_slash(str_l_vec[1]));
+                cont_l[str_l_vec[0]]    = controle_slash(str_l_vec[1]); // store location with its path
+                return 1 ;
+            }
+            if (!str_l_vec[0].compare("}"))
+            {
+                s_token++;
+                return 0;
+            }
         }
-        else
-        {
-            check = "on";
-            return 0;
-        }
+        if (rd_cont.eof() && s_token == 1)
+            print_err ("syntaxt_error }");
     }
     return 1;
 }
@@ -285,7 +339,6 @@ int    server::parse_both(std::ifstream& rd_cont, std::string &str_)
                 {
                     check_size(s_vec, 'l'); // check first loca's path
                     vec_of_locations.push_back(controle_slash(s_vec[1]));
-                    //"first location after normal = " << controle_slash(s_vec[1]) << "\n";
                     cont_l[s_vec[0]] = controle_slash(s_vec[1]);
                     std::getline(rd_cont, str_);
                     str = strtrim(str);
@@ -293,10 +346,11 @@ int    server::parse_both(std::ifstream& rd_cont, std::string &str_)
                 if (!str_.compare("{"))
                 {
                     obj.l_token++;
-                    if (parse_loca(rd_cont, str_) == 1)
+                    int c = parse_loca(rd_cont, str_);
+                    if (!c)
+                        return 2; 
+                    if (c == 1)
                         continue;
-                    else
-                        return 1;
                 }
             }
         }
@@ -319,10 +373,10 @@ int    server::parse_both(std::ifstream& rd_cont, std::string &str_)
 
 int        server::check_stat(std::string &stat_error)
 {
-    if (stat_error.compare("403") && stat_error.compare("404") && 
-    stat_error.compare("301") && stat_error.compare("500") && stat_error.compare("504")) // you should add more i think ...
-        return 1;
-    return 0;
+    int a = std::atoi(stat_error.c_str());
+    if (a > 199 && a < 599) // you should add more i think ...
+        return 0;
+    return 1;
 }
 
 void        server::check_size(std::vector<std::string> &s, char c)
@@ -471,9 +525,13 @@ void        server::stor_values(std::vector<std::string> s, char ch)
         else if (!s[0].compare("autoindex"))
             cont_l[s[0]] = s[1].substr(0, s[1].size());
         else if (!s[0].compare("upload"))
+        {
             cont_l[s[0]] = s[1].substr(0, s[1].size());
+        }
         else if (!s[0].compare("upload_path"))
+        {
             cont_l[s[0]] = controle_slash(s[1].substr(0, s[1].size()));
+        }
         else if (!s[0].compare("cgi_status"))
             cont_l[s[0]] = s[1].substr(0, s[1].size());
     }
