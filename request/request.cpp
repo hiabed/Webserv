@@ -236,6 +236,7 @@ std::string     request::get_full_uri(server &server, Client& obj)
             if (!(*it)->l[j]->redirction_path.empty() && redirection_stat == 0)
             {
                 obj.redirec_path = (*it)->l[j]->redirction_path;
+                (*it)->l[j]->redirction_path.clear();
                 redirection_stat = 1;
             }
             break ;

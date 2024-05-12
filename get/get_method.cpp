@@ -114,7 +114,11 @@ void cgi::sendResponse(int fd, std::string& response, std::string stat, std::str
         httpResponse += "\r\n";
         if (fd_maps[fd]->cgi_.is_error)
             httpResponse += response; 
-        send(fd, httpResponse.c_str(), httpResponse.length(), 0);
+        int c = send(fd, httpResponse.c_str(), httpResponse.length(), 0); //// add protect please don't forget
+        if (c == -1 || c == 0) {
+            multplixing::close_fd(fd, fd_maps[fd]->epoll_fd);
+            return ;
+        }
         fd_maps[fd]->completed = 1;
         if (fd_maps[fd]->cgi_.is_error)
             multplixing::close_fd(fd, fd_maps[fd]->epoll_fd);
@@ -127,9 +131,14 @@ void cgi::sendResponse(int fd, std::string& response, std::string stat, std::str
         int x = ss.read(buff, 1024).gcount();
         if (x > 0) {
             off += x;
-            send(fd, buff, x, 0);
+            int c = send(fd, buff, x, 0);       //// add protect please don't forget
+            if (c == -1 || c == 0) {
+                off = 0;
+                multplixing::close_fd(fd, fd_maps[fd]->epoll_fd);
+                return ;
+            }
         }
-        if (ss.eof() || ss.gcount() < 1024) {
+        if (x == -1 || x == 0 || ss.eof() || ss.gcount() < 1024) {
             off = 0;
             multplixing::close_fd(fd, fd_maps[fd]->epoll_fd);
             return ;
@@ -188,6 +197,7 @@ int  cgiresponse(int fd) {
 
 int    get_method::get_mthod(int fd)
 {
+
     std::map<int, Client *>::iterator it = fd_maps.find(fd);
     std::string         response;
     std::string         extention_type;
@@ -207,16 +217,34 @@ int    get_method::get_mthod(int fd)
     extention_type = it->second->requst.get_exten_type(it->second->requst.uri);
     StringSize << fileSize;
 
+    err_stat = 0;
+    if (access(it->second->requst.uri.c_str(), F_OK) < 0)
+    {
+        err_stat = it->second->resp.response_error("404", fd);
+        return 1;
+    }
+    if ((access(it->second->requst.uri.c_str(), R_OK) < 0) || (check_path == 2  && !it->second->requst.auto_index_stat))
+    {
+        err_stat = it->second->resp.response_error("403", fd);
+        return 1;
+    }         
     if (check_path == 1)
     {
         if (fd_maps[fd]->cgi_.stat_cgi)
             return cgiresponse(fd);
         if (!it->second->res_header) {
+
             response = it->second->resp.get_header("200", extention_type, StringSize.str(), *it->second);
             it->second->read_f.open(it->second->requst.uri.c_str());
+            if (!it->second->read_f.is_open())
+                return 1;
             stat_ = send(fd, response.c_str(), response.size(), 0);
             if (stat_ == -1 || stat_ == 0)
+            {
+                it->second->read_f.close();
                 return 1;
+            }
+            fd_maps[fd]->start_time = time(NULL);
         }
         else
         {
@@ -225,11 +253,16 @@ int    get_method::get_mthod(int fd)
             if (it->second->read_f.gcount() > 0) {
                 stat_ = send(fd, buff, x, 0);
                 if (stat_ == -1 || stat_ == 0)
-                return 1;
+                {
+                    it->second->read_f.close();
+                    return 1;
+                }
+                fd_maps[fd]->start_time = time(NULL);
             }
             if (it->second->read_f.eof() || it->second->read_f.gcount() < 1024)
             {
                 it->second->rd_done = 1;
+                it->second->read_f.close();
                 return 1;
             }
         }
@@ -263,16 +296,6 @@ int    get_method::get_mthod(int fd)
             return 1;
         }
     }
-    else
-    { 
-        err_stat = 0;
-        if (access(it->second->requst.uri.c_str(), F_OK) < 0)
-             err_stat = it->second->resp.response_error("404", fd);
-        if ((access(it->second->requst.uri.c_str(), R_OK) < 0) || (check_path == 2  && !it->second->requst.auto_index_stat))
-            err_stat = it->second->resp.response_error("403", fd);
-        if (err_stat)
-            return 1;
-    }
     return 0;
 }
 
@@ -292,9 +315,8 @@ std::string     get_method::get_exten_type(std::string path, std::map<std::strin
 std::streampos  get_method::get_fileLenth(std::string path)
 {
     std::ifstream file(path.c_str(), std::ios::binary | std::ios::ate);
-    if (!file.is_open()) {
+    if (!file.is_open())
         return -1;
-    }
     file.seekg(0, std::ios::end);
     std::streampos file_Size = file.tellg();
     file.seekg(0, std::ios::beg);
@@ -363,8 +385,6 @@ int     get_method::check_exist(const std::string& path)
     struct stat fileStat;
     if (stat(path.c_str(), &fileStat) == 0) 
     {
-        if ((fileStat.st_mode & S_IROTH) == 0)
-            return 3;
         if (S_ISREG(fileStat.st_mode)) 
             return 1;
         if (S_ISDIR(fileStat.st_mode))

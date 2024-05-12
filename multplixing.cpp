@@ -91,12 +91,9 @@ void        multplixing::lanch_server(server parse)
             perror("Failed setting file status");
             exit(EXIT_FAILURE);
         }
-
-        
         struct epoll_event envts;
         envts.data.fd = sockfd;
         envts.events = EPOLLIN;
-    
         epoll_ctl(epoll_fd, EPOLL_CTL_ADD, sockfd, &envts);
     }
 
@@ -105,8 +102,6 @@ void        multplixing::lanch_server(server parse)
         signal(SIGPIPE, SIG_IGN);
         std::string buffer;
         std::vector<int>::iterator it;
-
-        signal(SIGPIPE, SIG_IGN);
         int num = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
         for (int i = 0; i < num; i++) {
             check_cgi = false;
@@ -142,7 +137,7 @@ void        multplixing::lanch_server(server parse)
                     if (close_fd( events[i].data.fd, epoll_fd ))
                         continue ;
                 }
-                if ((difftime(end, fd_maps[events[i].data.fd]->start_time) > MAX_TIME) /*&& fd_maps[events[i].data.fd]->istimeout */) {
+                if ((difftime(end, fd_maps[events[i].data.fd]->start_time) > MAX_TIME) ) {
                     if (fd_maps[events[i].data.fd]->resp.response_error("408", events[i].data.fd)) {
                         if (close_fd(events[i].data.fd, epoll_fd))
                             continue ;
@@ -284,7 +279,7 @@ void        multplixing::lanch_server(server parse)
                                 continue ;
                         }
                     }
-                    /****************        end        *********************/
+
                     fd_maps[events[i].data.fd]->u_can_send = 1;
                     if (fd_maps[events[i].data.fd]->is_cgi && !check_cgi) {
                         if (fd_maps[events[i].data.fd]->cgi_post && !fd_maps[events[i].data.fd]->requst.method.compare("POST")) {

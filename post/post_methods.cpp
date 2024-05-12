@@ -131,6 +131,14 @@ bool post::post_method(std::string buffer, int fd)
         if (transfer_encoding == "chunked")
         {
             chunked_len = 0;
+            if (!is_valid_hexa(buffer))
+            {
+                g = 1;
+                outFile.close();
+                remove((it_->second->requst.upload_path + file).c_str());
+                concat.clear();
+                return true;
+            }
             parse_hexa(buffer);
         }
         else if (transfer_encoding != "chunked" && g == 10)
@@ -153,9 +161,7 @@ bool post::post_method(std::string buffer, int fd)
     else
     {
         if (it_->second->is_cgi && content_type == "multipart/form-data")
-        {
             return boundary_CGI(buffer, (*fd_maps[fd]->requst.it)->max_body);
-        }
         else
             return binary(buffer, (*fd_maps[fd]->requst.it)->max_body, it_->second->requst.upload_path);
     }
@@ -444,27 +450,44 @@ void post::parse_hexa(std::string &remain)
         remain = remain.substr(remain.find("\r\n") + 2);
 }
 
+int ff = 1;
+
 bool post::chunked(std::string buffer, std::string max_body_size, std::string upload_path)
 {
     if (outFile.is_open())
     {
+        if (!chunk_length)
+            return is_end_of_chunk(max_body_size, upload_path);
         concat += buffer;
-        if (concat.length() >= (chunk_length + 9) || concat.find("\r\n0\r\n\r\n") != std::string::npos)
+        if (concat.length() >= (chunk_length) && ff == 1)
         {
             outFile << concat.substr(0, chunk_length);
             chunked_len += concat.substr(0, chunk_length).length();
-            concat = concat.substr(chunk_length + 2);
-            if (!is_valid_hexa(concat))
-            {
-                g = 1;
-                outFile.close();
-                remove((upload_path + file).c_str());
-                concat.clear();
-                return true;
-            }
-            parse_hexa(concat);
+            concat = concat.substr(chunk_length);
+            ff = 0;
         }
-        return is_end_of_chunk(max_body_size, upload_path);
+        if (!ff)
+        {
+            if (concat.find("\r\n") != std::string::npos)
+            {
+                if (concat.substr(2).find("\r\n") != std::string::npos)
+                {
+                    // std::cout << "parse hexa.\n";
+                    concat = concat.substr(2);
+                    if (!is_valid_hexa(concat))
+                    {
+                        g = 1;
+                        outFile.close();
+                        remove((upload_path + file).c_str());
+                        concat.clear();
+                        return true;
+                    }
+                    parse_hexa(concat);
+                    ff = 1;
+                    return is_end_of_chunk(max_body_size, upload_path);
+                }
+            }
+        }
     }
     return false;
 }
