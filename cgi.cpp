@@ -60,14 +60,14 @@ void    cgi::cgi_method(request& rq, int fd) {
     if (clientPid == 0) {
         freopen(file_out.c_str(), "w", stdout);
         freopen(file_out.c_str(), "w", stderr);
-        freopen(("/tmp/" + file_in).c_str(), "r", stdin);
+        if (fd_maps[fd]->requst.method == "POST")
+            freopen(("/tmp/" + file_in).c_str(), "r", stdin);
         args[0] = strdup(compiler.c_str());
         args[1] = strdup(rq.uri.c_str());
         args[2] = NULL;
         std::string current_path = rq.uri.substr(0, rq.uri.find_last_of("/"));
         chdir(current_path.c_str());
         execve(args[0], args, env);
-        std::cerr << "\033[1;31mI AM IN THE CHILD PROCCESS\033[0m" << std::endl;
         kill(getpid(), 2);
     }
     else {

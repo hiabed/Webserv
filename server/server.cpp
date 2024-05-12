@@ -31,7 +31,7 @@ int         server::check_forbidden(std::string path_)
 {
     for (size_t i = 0; i < path_.size(); i++)
     {
-       if (/*path_[i] == '?' || */ path_[i] == '=' || path_[i] == '[' || path_[i] == ']' || path_[i] == '@' || path_[i] == '&' || path_[i] == '%' || path_[i] == '*' || path_[i] == '$' || path_[i] == '#' || path_[i] == '<' || path_[i] == '>' || path_[i] == '|')
+       if (path_[i] == '[' || path_[i] == ']' || path_[i] == '{' || path_[i] == '}' || path_[i] == '\\' || path_[i] == '^' || path_[i] == '~' || path_[i] == '`')
             return 1;
     }
     return 0;
@@ -120,7 +120,6 @@ void        server::check_empty(const char* file_)
 {
     std::ifstream new_red(file_);
 
-    // read a character
     char c;
     std::string str;
     new_red.read(&c, 1);
@@ -141,25 +140,22 @@ void        server::mange_file(const char* file)
     obj.l_token = 0;
     check_empty(file);
     check_coment(file);
-    while (std::getline(rd_content, str)) // loop to get lines
+    while (std::getline(rd_content, str))
     {
         str = strtrim(str);
         if (str.empty() || isWhitespace(str) || str[0] == '#')
             continue;
         if (str.compare("server"))
             print_err("syntaxt_error server");
-        std::getline(rd_content, str); // store all servers
+        std::getline(rd_content, str);
         str = strtrim(str);
         if (!str.compare("{"))
         {
             s_token++;
             int g = parse_both(rd_content, str);
-            // parse_both(rd_content,str);
             if ((g == 2 && s_token == 2))
             {
                 check_duplicate_location(vec_of_locations);
-                // if (atol(max_body.c_str()) < 0)
-                //     max_body = "2147483647"; // ask later
                 server *new_s = new server(cont, l, vec_of_locations, max_body, err_page);
                 s.push_back(new_s);
                 garbage.push_back(new_s);
@@ -201,7 +197,7 @@ void           server::message_response_stat()
 int        server::parse_loca(std::ifstream& rd_cont, std::string &str_)
 {
     std::vector<std::string>    v_s;
-    while (std::getline(rd_cont, str)) // loop to iterate inside location
+    while (std::getline(rd_cont, str))
     {
         str_ = strtrim(str_);
         if (str_.empty() || isWhitespace(str_) || str[0] == '#')
@@ -229,7 +225,6 @@ int        server::parse_loca(std::ifstream& rd_cont, std::string &str_)
             obj.l_token++;
             if (obj.l_token == 2)
             {
-                // make map that store path location and root , you have root_
                 handl_loca(cont_l, v_s, _root);
                 cgi_extention();
                 location *new_l = new location(cont_l, v_s, cgi_map, redirction_path);
@@ -239,7 +234,6 @@ int        server::parse_loca(std::ifstream& rd_cont, std::string &str_)
                 cont_l.clear();
                 redirction_path.clear();
                 v_s.clear();
-                // cgi_map.clear();
                 break ;
             }
         }
@@ -252,14 +246,14 @@ int        server::parse_loca(std::ifstream& rd_cont, std::string &str_)
         while (std::getline(rd_cont, str_l))
         {
             str_l = strtrim(str_l);
-            str_l_vec = isolate_str(str_l, ' '); // }
-            if (isWhitespace(str_l) || str_l.empty()) // modify
+            str_l_vec = isolate_str(str_l, ' ');
+            if (isWhitespace(str_l) || str_l.empty())
                 continue;
             if (!str_l_vec[0].compare("location"))
             {
                 check_size(str_l_vec, 'l');
                 vec_of_locations.push_back(controle_slash(str_l_vec[1]));
-                cont_l[str_l_vec[0]]    = controle_slash(str_l_vec[1]); // store location with its path
+                cont_l[str_l_vec[0]]    = controle_slash(str_l_vec[1]);
                 return 1 ;
             }
             if (!str_l_vec[0].compare("}"))
@@ -301,10 +295,10 @@ int     server::check_exist(std::string path)
     {
         if (S_ISREG(fileStat.st_mode) || S_ISDIR(fileStat.st_mode))
         {
-            return 1; // Path exists and is a regular file
+            return 1;
         }
     }
-    return 0; // Path does not exist
+    return 0;
 }
 
 bool server::isWhitespace(std::string str) 
@@ -319,7 +313,7 @@ bool server::isWhitespace(std::string str)
 
 int    server::parse_both(std::ifstream& rd_cont, std::string &str_)
 {
-    while (std::getline(rd_cont, str_)) // loop to iterate inside server
+    while (std::getline(rd_cont, str_))
     {
         str_ = strtrim(str_);
         if (str_.empty() || isWhitespace(str_) || str[0] == '#')
@@ -335,9 +329,9 @@ int    server::parse_both(std::ifstream& rd_cont, std::string &str_)
                 print_err("syntaxt_error");    
             else if (!s_vec[0].compare("location") || !s_vec[0].compare("{"))
             {
-                if (s_vec[0].compare("{")) // you mean that is not { then it is a location
+                if (s_vec[0].compare("{"))
                 {
-                    check_size(s_vec, 'l'); // check first loca's path
+                    check_size(s_vec, 'l');
                     vec_of_locations.push_back(controle_slash(s_vec[1]));
                     cont_l[s_vec[0]] = controle_slash(s_vec[1]);
                     std::getline(rd_cont, str_);
@@ -359,7 +353,7 @@ int    server::parse_both(std::ifstream& rd_cont, std::string &str_)
             check_size(s_vec, 's');
             if (!s_vec[0].compare("error_page"))
             {
-                if (check_exist(s_vec[2]) && !check_stat(s_vec[1])) // check also stat lik 404 301 ...
+                if (check_exist(s_vec[2]) && !check_stat(s_vec[1]))
                     err_page[s_vec[1]] = s_vec[2];
                 else
                     print_err("syntaxt_error on the error_page");
@@ -374,7 +368,7 @@ int    server::parse_both(std::ifstream& rd_cont, std::string &str_)
 int        server::check_stat(std::string &stat_error)
 {
     int a = std::atoi(stat_error.c_str());
-    if (a > 199 && a < 599) // you should add more i think ...
+    if (a > 199 && a < 599)
         return 0;
     return 1;
 }
@@ -538,7 +532,7 @@ void        server::stor_values(std::vector<std::string> s, char ch)
 }
 
 
-std::string    server::controle_slash(std::string direc) // remove slash beg, end .
+std::string    server::controle_slash(std::string direc)
 {
     size_t  f_slash = 0;
     std::string normle_path;

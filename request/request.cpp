@@ -14,11 +14,8 @@ int               request::one_of_allowed(std::string mehod, std::vector<std::st
     }
     std::vector<std::string>::iterator it = allowed_methods.begin();
     std::vector<std::string>::iterator ite = allowed_methods.end();
-    if ((*it).compare("allow_methods"))
-    {
-        exit (1);
+    if (!(*it).compare("allow_methods"))
         it++;
-    }
     while (it != ite)
     {
         if (!it->compare(mehod))
@@ -101,7 +98,7 @@ std::string hex_to_ascii(const std::string& input) {
     return result;
 }
 
-int            request::parse_req(std::string   rq, server &server, int fd) // you can remove the server argenent
+int            request::parse_req(std::string   rq, server &server, int fd)
 {
     if (parse_heade(rq, server, fd) == 1)
         return 1;
@@ -110,6 +107,7 @@ int            request::parse_req(std::string   rq, server &server, int fd) // y
         fd_maps[fd]->err = 1;
     }
     std::map<int, Client *>::iterator it = fd_maps.find(fd);
+    int                               stat_;
     it->second->resp.response_message = server.response_message;
 
     last          = rq.find("\r\n");
@@ -155,7 +153,9 @@ int            request::parse_req(std::string   rq, server &server, int fd) // y
     if (redirection_stat == 1)
     {
         std::string msg = "HTTP/1.1 301 Moved Permanently\r\nlocation: " + it->second->redirec_path + "\r\n\r\n";
-        write(fd, msg.c_str(), msg.length());
+        stat_ = write(fd, msg.c_str(), msg.length());
+        if (stat_ == -1 || stat_ == 0)
+                return 1;
         it->second->not_allow_method = 1;
         return 0;
     }
@@ -204,7 +204,7 @@ std::string     request::find_longest_path(server &server, Client &obj)
                 long_path = *it_b;
         }
     }
-    if (check_redi && path[path.length() - 1] != '/' && path__.substr(long_path.length()).empty()) // check kayn location and request url mamsaliach b '/' and makin ta haja mnwra '/'  /v/index.html
+    if (check_redi && path[path.length() - 1] != '/' && path__.substr(long_path.length()).empty())
     {
         long_path = "move_permently";
         return (long_path);
@@ -216,8 +216,6 @@ std::string     request::get_full_uri(server &server, Client& obj)
 {
     int     loca_found = 0;
     longest_loca = find_longest_path(server, obj);
-    // if (longest_loca == "/" && path.length() > 1)
-    //     return ("404");
     if (longest_loca == "move_permently")
     {
         obj.redirec_path = path + "/";
@@ -249,12 +247,14 @@ std::string     request::get_full_uri(server &server, Client& obj)
 int           request::rewrite_location(std::map<std::string, std::string> location_map)
 {
     std::map<std::string, std::string>::iterator      ite = location_map.end();
+    std::map<std::string, std::string>::iterator      it_cgi_check = location_map.find("cgi_status");
+
+    if (it_cgi_check == location_map.end())
+        stat_cgi = "off";
     for (std::map<std::string, std::string>::iterator itb = location_map.begin(); itb != ite; itb++)
     {
         if ((!(*itb).first.compare("upload")))
-        {
             upload_state = (*itb).second;
-        }
         if ((!(*itb).first.compare("root")))
             loca__root = (*itb).second;
         if ((!itb->first.compare("cgi_status")))  
@@ -268,20 +268,20 @@ int           request::rewrite_location(std::map<std::string, std::string> locat
     }
     for (std::map<std::string, std::string>::iterator itb = location_map.begin(); itb != location_map.end(); itb++)
     {
-        if ((!(*itb).first.compare("location") && !(*itb).second.compare("/"))) // found bool is false in case location not found !
+        if ((!(*itb).first.compare("location") && !(*itb).second.compare("/")))
             root_map = location_map;
         if ((!(*itb).first.compare("location") &&  !itb->second.compare(longest_loca)))
         {
             found = true;
             auto_index_stat = check_autoindex(location_map);
             std::map<std::string, std::string>::iterator it_b = location_map.find("root");
-            if (!rest_fldr.empty()) // rest 3amr
+            if (!rest_fldr.empty())
             {
                 full_path = (*it_b).second + "/" + rest_fldr;
                 check = 1;
                 return 1;
             }
-            else // add index on specify location
+            else
             {
                 std::map<std::string, std::string>::iterator indx = location_map.find("index");
                 if (indx != location_map.end())
@@ -354,6 +354,8 @@ void        request::fill_extentions()
 
 void request::reset() 
 {
+    k = 0;
+    method_state = false;
     http_version.clear();
     loca_fldr.clear();
     rest_fldr.clear();
@@ -383,7 +385,7 @@ std::streampos  request::get_fileLenth(std::string path)
 {
     std::ifstream file(path.c_str(), std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
-        return -1; // Return -1 to indicate error
+        return -1;
     }
     file.seekg(0, std::ios::end);
     std::streampos file_Size = file.tellg();

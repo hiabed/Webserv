@@ -48,6 +48,7 @@ Client::~Client()
 
 Client::Client()
 {
+    f                   = 0;
     join_readbytes      = 0;
     buf                 = "";
     res_header          = 0;

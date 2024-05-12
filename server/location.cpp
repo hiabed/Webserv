@@ -14,7 +14,7 @@ int     location::check_exist(std::string path)
     if (stat(path.c_str(), &fileStat) == 0) 
     {
         if (S_ISREG(fileStat.st_mode) || S_ISDIR(fileStat.st_mode))
-            return 1; // Path exists and is a regular file
+            return 1;
     }
     return 0;
 } 

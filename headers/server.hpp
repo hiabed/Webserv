@@ -52,7 +52,7 @@ class server : public location
         std::vector<std::string>            vec_of_locations;
         std::vector<std::string>            p_s_id;
 
-        int                                 check_forbidden(std::string path_);
+        int                                  check_forbidden(std::string path_);
         void                                check_coment(const char* file_);
         void                                check_empty(const char* rd_content);
         std::string                         controle_slash(std::string direc);
