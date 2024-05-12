@@ -454,38 +454,35 @@ int ff = 1;
 
 bool post::chunked(std::string buffer, std::string max_body_size, std::string upload_path)
 {
-    if (outFile.is_open())
+    if (!chunk_length)
+        return is_end_of_chunk(max_body_size, upload_path);
+    concat += buffer;
+    if (concat.length() >= (chunk_length) && ff == 1)
     {
-        if (!chunk_length)
-            return is_end_of_chunk(max_body_size, upload_path);
-        concat += buffer;
-        if (concat.length() >= (chunk_length) && ff == 1)
+        outFile << concat.substr(0, chunk_length);
+        chunked_len += concat.substr(0, chunk_length).length();
+        concat = concat.substr(chunk_length);
+        ff = 0;
+    }
+    if (!ff)
+    {
+        if (concat.find("\r\n") != std::string::npos)
         {
-            outFile << concat.substr(0, chunk_length);
-            chunked_len += concat.substr(0, chunk_length).length();
-            concat = concat.substr(chunk_length);
-            ff = 0;
-        }
-        if (!ff)
-        {
-            if (concat.find("\r\n") != std::string::npos)
+            if (concat.substr(2).find("\r\n") != std::string::npos)
             {
-                if (concat.substr(2).find("\r\n") != std::string::npos)
+                // std::cout << "parse hexa.\n";
+                concat = concat.substr(2);
+                if (!is_valid_hexa(concat))
                 {
-                    // std::cout << "parse hexa.\n";
-                    concat = concat.substr(2);
-                    if (!is_valid_hexa(concat))
-                    {
-                        g = 1;
-                        outFile.close();
-                        remove((upload_path + file).c_str());
-                        concat.clear();
-                        return true;
-                    }
-                    parse_hexa(concat);
-                    ff = 1;
-                    return is_end_of_chunk(max_body_size, upload_path);
+                    g = 1;
+                    outFile.close();
+                    remove((upload_path + file).c_str());
+                    concat.clear();
+                    return true;
                 }
+                parse_hexa(concat);
+                ff = 1;
+                return is_end_of_chunk(max_body_size, upload_path);
             }
         }
     }
@@ -494,36 +491,33 @@ bool post::chunked(std::string buffer, std::string max_body_size, std::string up
 
 bool post::binary(std::string buffer, std::string max_body_size, std::string upload_path)
 {
-    if (outFile.is_open())
+    outFile << buffer;
+    body_size += buffer.size();
+    if (body_size > atol(max_body_size.c_str()))
     {
-        outFile << buffer;
-        body_size += buffer.size();
-        if (body_size > atol(max_body_size.c_str()))
-        {
-            outFile.close();
-            remove((upload_path + file).c_str());
-            buffer.clear();
-            body_size = 0;
-            g = 3;
-            return true;
-        }
-        else if (body_size > atol(content_length.c_str()))
-        {
-            outFile.close();
-            remove((upload_path + file).c_str());
-            buffer.clear();
-            body_size = 0;
-            g = 1;
-            return true;
-        }
-        else if (body_size == atol(content_length.c_str()))
-        {
-            outFile.close();
-            buffer.clear();
-            body_size = 0;
-            g = 0;
-            return true;
-        }
+        outFile.close();
+        remove((upload_path + file).c_str());
+        buffer.clear();
+        body_size = 0;
+        g = 3;
+        return true;
+    }
+    else if (body_size > atol(content_length.c_str()))
+    {
+        outFile.close();
+        remove((upload_path + file).c_str());
+        buffer.clear();
+        body_size = 0;
+        g = 1;
+        return true;
+    }
+    else if (body_size == atol(content_length.c_str()))
+    {
+        outFile.close();
+        buffer.clear();
+        body_size = 0;
+        g = 0;
+        return true;
     }
     return false;
 }
@@ -531,40 +525,37 @@ bool post::binary(std::string buffer, std::string max_body_size, std::string upl
 bool post::boundary_CGI(std::string buffer, std::string max_body_size)
 {
     concat += buffer;
-    if (outFile.is_open() == true)
+    if (concat.find(sep + "--\r\n") != std::string::npos)
     {
-        if (concat.find(sep + "--\r\n") != std::string::npos)
+        outFile << concat.substr(0, concat.find(sep + "--\r\n"));
+        concat = concat.substr(concat.find(sep + "--\r\n"));
+    }
+    else if (concat.find(sep + "--\r\n") == std::string::npos)
+    {
+        outFile << concat.substr(0, concat.length() - sep.length());
+        len += concat.substr(0, concat.length() - sep.length()).length();
+        if (len > atol(max_body_size.c_str()))
         {
-            outFile << concat.substr(0, concat.find(sep + "--\r\n"));
-            concat = concat.substr(concat.find(sep + "--\r\n"));
-        }
-        else if (concat.find(sep + "--\r\n") == std::string::npos)
-        {
-            outFile << concat.substr(0, concat.length() - sep.length());
-            len += concat.substr(0, concat.length() - sep.length()).length();
-            if (len > atol(max_body_size.c_str()))
-            {
-                for (size_t i = 0; i < vec.size(); i++)
-                    remove(vec.at(i).c_str());
-                outFile.close();
-                vec.clear();
-                concat.clear();
-                CType.clear();
-                v = 0;
-                g = 3;
-                return true;
-            }
-            concat = concat.substr(concat.length() - sep.length());
-        }
-        if (concat == (sep + "--\r\n"))
-        {
-            concat.clear();
+            for (size_t i = 0; i < vec.size(); i++)
+                remove(vec.at(i).c_str());
             outFile.close();
-            CType.clear();
             vec.clear();
+            concat.clear();
+            CType.clear();
             v = 0;
+            g = 3;
             return true;
         }
+        concat = concat.substr(concat.length() - sep.length());
+    }
+    if (concat == (sep + "--\r\n"))
+    {
+        concat.clear();
+        outFile.close();
+        CType.clear();
+        vec.clear();
+        v = 0;
+        return true;
     }
     return false;
 }
