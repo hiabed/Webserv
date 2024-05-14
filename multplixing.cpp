@@ -236,10 +236,13 @@ void        multplixing::lanch_server(server parse)
                                     continue ;
                             }
                         }
-                        if (!fd_maps[events[i].data.fd]->is_cgi && fd_maps[events[i].data.fd]->post_->post_method(fd_maps[events[i].data.fd]->buf, events[i].data.fd)  && !it_fd->second->not_allow_method)
+                        if (!fd_maps[events[i].data.fd]->is_cgi)
                         {
-                            fd_maps[events[i].data.fd]->post_->j = 1;
-                            fd_maps[events[i].data.fd]->flagg = 0;
+                            if (fd_maps[events[i].data.fd]->post_->post_method(fd_maps[events[i].data.fd]->buf, events[i].data.fd)  && !it_fd->second->not_allow_method) 
+                            {
+                                fd_maps[events[i].data.fd]->post_->j = 1;
+                                fd_maps[events[i].data.fd]->flagg = 0;
+                            }
                         }
                         if (fd_maps[events[i].data.fd]->post_->g == 1)
                         {
