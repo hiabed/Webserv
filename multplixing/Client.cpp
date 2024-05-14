@@ -41,9 +41,10 @@ Client&         Client::operator=(const Client& copy)
 
 Client::~Client()
 {
-    kill(cgi_.clientPid, 9);
-    waitpid(cgi_.clientPid, NULL, 0);
-    unlink(cgi_.file_out.c_str());
+    kill(cgi_->clientPid, 9);
+    waitpid(cgi_->clientPid, NULL, 0);
+    remove(cgi_->file_out.c_str());
+    delete cgi_;
 }
 
 Client::Client()

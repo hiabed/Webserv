@@ -48,7 +48,6 @@ void        multplixing::lanch_server(server parse)
     response     resp_;
     std::vector<server*>::iterator it;
     time_t  end;
-    cgi cgi_;
     
     bool check_cgi = false;
 
@@ -120,14 +119,19 @@ void        multplixing::lanch_server(server parse)
                 fd_maps[client_socket]             = new Client();
                 fd_maps[client_socket]->serv_      = parse;
                 client_history[client_socket]      = *it;
-                fd_maps[client_socket]->cgi_       = cgi_;
+                fd_maps[client_socket]->cgi_       = new cgi();
                 fd_maps[client_socket]->epoll_fd   = epoll_fd;
+                fd_maps[client_socket]->post_ = new post();
+                // fd_maps[client_socket]->get = new get();
                 fd_maps[client_socket]->is_cgi     = 0;
                 fd_maps[client_socket]->start_time = time(NULL);
                 fd_maps[client_socket]->flagg      = 0;
                 fd_maps[client_socket]->err        = 0;
                 fd_maps[client_socket]->cgi_post   = 0;
                 fd_maps[client_socket]->f          = 0;
+                fd_maps[client_socket]->completed  = 0;
+                fd_maps[client_socket]->iscgitimeout = 0;
+                fd_maps[client_socket]->is_error = 0;
             }
             else {
                 end = time(NULL);
@@ -145,7 +149,7 @@ void        multplixing::lanch_server(server parse)
                 }
                 else if (events[i].events & EPOLLIN)
                 {
-                    fd_maps[events[i].data.fd]->cgi_.stat_cgi = 0;
+                    fd_maps[events[i].data.fd]->cgi_->stat_cgi = 0;
                     buffer.resize(BUFFER_SIZE);
                     bytesRead = recv(events[i].data.fd , &buffer[0], BUFFER_SIZE, 0);
                     if (!fd_maps[events[i].data.fd]->flagg)
@@ -202,7 +206,7 @@ void        multplixing::lanch_server(server parse)
                         }
                     }
                     if (!fd_maps[events[i].data.fd]->requst.stat_cgi.compare("on"))
-                        fd_maps[events[i].data.fd]->cgi_.checkifcgi(rq, fd_maps[events[i].data.fd]->is_cgi, events[i].data.fd);
+                        fd_maps[events[i].data.fd]->cgi_->checkifcgi(rq, fd_maps[events[i].data.fd]->is_cgi, events[i].data.fd);
                     else if (!fd_maps[events[i].data.fd]->requst.stat_cgi.compare("off")){
                         if (fd_maps[events[i].data.fd]->resp.response_error("403", events[i].data.fd)) {
                             if (close_fd(events[i].data.fd, epoll_fd))
@@ -210,15 +214,15 @@ void        multplixing::lanch_server(server parse)
                         }
                     }
                     /**************** FOR POST METHOD *********************/
-                    fd_maps[events[i].data.fd]->post_.g = 0;
-                    fd_maps[events[i].data.fd]->post_.j = 0;
+                    fd_maps[events[i].data.fd]->post_->g = 0;
+                    fd_maps[events[i].data.fd]->post_->j = 0;
                     if (rq.method == "POST" && fd_maps[events[i].data.fd]->flagg == 1 && !it_fd->second->not_allow_method)
                     {
                         if (fd_maps[events[i].data.fd]->is_cgi)
                         {
-                            if (fd_maps[events[i].data.fd]->post_.post_method(fd_maps[events[i].data.fd]->buf, events[i].data.fd)  && !it_fd->second->not_allow_method)
+                            if (fd_maps[events[i].data.fd]->post_->post_method(fd_maps[events[i].data.fd]->buf, events[i].data.fd)  && !it_fd->second->not_allow_method)
                             {
-                                fd_maps[events[i].data.fd]->post_.j = 1;
+                                fd_maps[events[i].data.fd]->post_->j = 1;
                                 fd_maps[events[i].data.fd]->cgi_post = 1;
                                 fd_maps[events[i].data.fd]->flagg = 0;
                             }
@@ -227,53 +231,53 @@ void        multplixing::lanch_server(server parse)
                         {
                             if (it_fd->second->resp.response_error("403", events[i].data.fd))
                             {
-                                fd_maps[events[i].data.fd]->post_.g = 0;
+                                fd_maps[events[i].data.fd]->post_->g = 0;
                                 if (close_fd(events[i].data.fd, epoll_fd))
                                     continue ;
                             }
                         }
-                        if (fd_maps[events[i].data.fd]->post_.post_method(fd_maps[events[i].data.fd]->buf, events[i].data.fd)  && !it_fd->second->not_allow_method && !fd_maps[events[i].data.fd]->is_cgi)
+                        if (!fd_maps[events[i].data.fd]->is_cgi && fd_maps[events[i].data.fd]->post_->post_method(fd_maps[events[i].data.fd]->buf, events[i].data.fd)  && !it_fd->second->not_allow_method)
                         {
-                            fd_maps[events[i].data.fd]->post_.j = 1;
+                            fd_maps[events[i].data.fd]->post_->j = 1;
                             fd_maps[events[i].data.fd]->flagg = 0;
                         }
-                        if (fd_maps[events[i].data.fd]->post_.g == 1)
+                        if (fd_maps[events[i].data.fd]->post_->g == 1)
                         {
                             if (it_fd->second->resp.response_error("400", events[i].data.fd))
                             {
-                                fd_maps[events[i].data.fd]->post_.g = 0;
+                                fd_maps[events[i].data.fd]->post_->g = 0;
                                 if (close_fd(events[i].data.fd, epoll_fd))
                                     continue ;
                             }
                         }
-                        else if (fd_maps[events[i].data.fd]->post_.g == 2)
+                        else if (fd_maps[events[i].data.fd]->post_->g == 2)
                         {
                             if (it_fd->second->resp.response_error("415", events[i].data.fd))
                             {
-                                fd_maps[events[i].data.fd]->post_.g = 0;
+                                fd_maps[events[i].data.fd]->post_->g = 0;
                                 if (close_fd(events[i].data.fd, epoll_fd))
                                     continue ;
                             }
                         }
-                        else if (fd_maps[events[i].data.fd]->post_.g == 3)
+                        else if (fd_maps[events[i].data.fd]->post_->g == 3)
                         {
                             if (it_fd->second->resp.response_error("413", events[i].data.fd))
                             {
-                                fd_maps[events[i].data.fd]->post_.g = 0;
+                                fd_maps[events[i].data.fd]->post_->g = 0;
                                 if (close_fd(events[i].data.fd, epoll_fd))
                                     continue ;
                             }
                         }
-                        else if (fd_maps[events[i].data.fd]->post_.g == 4)
+                        else if (fd_maps[events[i].data.fd]->post_->g == 4)
                         {
                             if (it_fd->second->resp.response_error("501", events[i].data.fd))
                             {
-                                fd_maps[events[i].data.fd]->post_.g = 0;
+                                fd_maps[events[i].data.fd]->post_->g = 0;
                                 if (close_fd(events[i].data.fd, epoll_fd))
                                     continue ;
                             }
                         }
-                        else if (fd_maps[events[i].data.fd]->post_.g == 5)
+                        else if (fd_maps[events[i].data.fd]->post_->g == 5)
                         {
                             if (close_fd(events[i].data.fd, epoll_fd))
                                 continue ;
@@ -283,10 +287,10 @@ void        multplixing::lanch_server(server parse)
                     fd_maps[events[i].data.fd]->u_can_send = 1;
                     if (fd_maps[events[i].data.fd]->is_cgi && !check_cgi) {
                         if (fd_maps[events[i].data.fd]->cgi_post && !fd_maps[events[i].data.fd]->requst.method.compare("POST")) {
-                            fd_maps[events[i].data.fd]->cgi_.cgi_method(rq, events[i].data.fd);
+                            fd_maps[events[i].data.fd]->cgi_->cgi_method(rq, events[i].data.fd);
                         }
                         else if (!fd_maps[events[i].data.fd]->requst.method.compare("GET"))
-                            fd_maps[events[i].data.fd]->cgi_.cgi_method(rq, events[i].data.fd);
+                            fd_maps[events[i].data.fd]->cgi_->cgi_method(rq, events[i].data.fd);
                         check_cgi = true;
                     }
                 }
@@ -314,9 +318,9 @@ void        multplixing::lanch_server(server parse)
                             }
                         }
                     }
-                    if (!fd_maps[events[i].data.fd]->requst.method.compare("POST") && fd_maps[events[i].data.fd]->post_.j && !fd_maps[events[i].data.fd]->is_cgi)
+                    if (!fd_maps[events[i].data.fd]->requst.method.compare("POST") && fd_maps[events[i].data.fd]->post_->j && !fd_maps[events[i].data.fd]->is_cgi)
                     {
-                        fd_maps[events[i].data.fd]->post_.j = 0;
+                        fd_maps[events[i].data.fd]->post_->j = 0;
                         if (it_fd->second->resp.response_error("201", events[i].data.fd) && !fd_maps[events[i].data.fd]->is_cgi)
                         {
                             if (close_fd( events[i].data.fd, epoll_fd ))
@@ -325,8 +329,8 @@ void        multplixing::lanch_server(server parse)
                         
                         respo = 1;
                     }
-                    else if (!fd_maps[events[i].data.fd]->requst.method.compare("POST") && fd_maps[events[i].data.fd]->post_.j && fd_maps[events[i].data.fd]->is_cgi) {
-                        respo = cgiresponse(events[i].data.fd);
+                    else if (!fd_maps[events[i].data.fd]->requst.method.compare("POST") && fd_maps[events[i].data.fd]->post_->j && fd_maps[events[i].data.fd]->is_cgi) {
+                        respo = cgi::cgiresponse(events[i].data.fd);
                         if (isfdclosed)
                             continue;
                     }

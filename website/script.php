@@ -1,7 +1,7 @@
 
 <!DOCTYPE html> 
 <?php 
-    setcookie("user:", "mallaoui", time() + 2 * 24 * 60 * 60); 
+    setcookie("user", "mallaoui", time() + 2 * 24 * 60 * 60); 
 ?> 
 <html> 
 <body> 

@@ -45,7 +45,4 @@ class multplixing
         };
 };
 
-
-int  cgiresponse(int fd);
-
 #endif

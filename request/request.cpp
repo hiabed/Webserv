@@ -60,7 +60,7 @@ int    checkcgi(request& rq, int& iscgi, int fd) {
         query = rq.uri.substr(rq.uri.find("?"));
         rq.uri = rq.uri.substr(0, rq.uri.find("?"));
         query = query.substr(query.find_last_of('?') + 1);
-        fd_maps[fd]->cgi_.QUERY_STRING = query;
+        fd_maps[fd]->cgi_->QUERY_STRING = query;
     }
     std::string path = rq.uri;
     std::string::iterator it = path.begin() + path.find_last_of("/") + 1;

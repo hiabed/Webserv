@@ -1,6 +1,6 @@
-#include "headers/Client.hpp"
-#include "headers/cgi.hpp"
-#include "headers/multplixing.hpp"
+#include "../headers/Client.hpp"
+#include "../headers/cgi.hpp"
+#include "../headers/multplixing.hpp"
 extern std::map<int, Client *> fd_maps;
 extern std::vector<void *> garbage;
 
@@ -26,24 +26,23 @@ void    cgi::checkifcgi(request& rq, int& iscgi, int fd) {
     }
 }
 
-char **cgi::fillCgiEnv(int fd) {
+void cgi::fillCgiEnv(int fd) {
     std::vector<std::string> env_v;
     env_v.push_back("SCRIPT_NAME=" + compiler);
     env_v.push_back("REQUEST_METHOD=" + fd_maps[fd]->requst.method);
     env_v.push_back("REDIRECT_STATUS=CGI");
     env_v.push_back("PATH_TRANSLATED=" + fd_maps[fd]->requst.uri);
-    env_v.push_back("QUERY_STRING=" + fd_maps[fd]->cgi_.QUERY_STRING);
-    env_v.push_back("HTTP_COOKIE=" + fd_maps[fd]->cgi_.HTTP_COOKIE);
+    env_v.push_back("QUERY_STRING=" + fd_maps[fd]->cgi_->QUERY_STRING);
+    env_v.push_back("HTTP_COOKIE=" + fd_maps[fd]->cgi_->HTTP_COOKIE);
     if (fd_maps[fd]->requst.method == "POST") {
-        env_v.push_back("CONTENT_TYPE=" + fd_maps[fd]->post_.content_type);
-        env_v.push_back("CONTENT_LENGTH=" + fd_maps[fd]->post_.content_length);
+        env_v.push_back("CONTENT_TYPE=" + fd_maps[fd]->post_->content_type);
+        env_v.push_back("CONTENT_LENGTH=" + fd_maps[fd]->post_->content_length);
     }
-    char **env = new char*[env_v.size() + 1];
+    env = new char*[env_v.size() + 1];
     for (std::vector<std::string>::iterator it = env_v.begin(); it != env_v.end(); it++) {
         env[it - env_v.begin()] = strdup(it->c_str());
     }
     env[env_v.size()] = NULL;
-    return env;
 }
 
 
@@ -53,8 +52,8 @@ void    cgi::cgi_method(request& rq, int fd) {
     std::string name;
     iss >> name;
     file_out ="/tmp/" + name;
-    char **env = fillCgiEnv(fd);
-    char **args = new char*[3];
+    fillCgiEnv(fd);
+    args = new char*[3];
     start_time = time(NULL);
     clientPid = fork();
     if (clientPid == 0) {
@@ -70,12 +69,10 @@ void    cgi::cgi_method(request& rq, int fd) {
         execve(args[0], args, env);
         kill(getpid(), 2);
     }
-    else {
-        delete [] env;
-        delete [] args;
-    }
 }
 
 
 cgi::~cgi(){
+    delete[] env;
+    delete[] args;
 }

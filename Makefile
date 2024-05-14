@@ -1,11 +1,12 @@
 NAME = webserv
 
 CXX = c++
-
+ 
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98 #-fsanitize=address -g3
 
 SRCS = 	main.cpp \
-		cgi.cpp \
+		./cgi/cgi.cpp \
+		./cgi/cgi_resp.cpp \
 		./multplixing/Client.cpp \
 		multplixing.cpp \
 		./request/response.cpp \
