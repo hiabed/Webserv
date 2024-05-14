@@ -218,7 +218,7 @@ void        multplixing::lanch_server(server parse)
                     /**************** FOR POST METHOD *********************/
                     fd_maps[events[i].data.fd]->post_->g = 0;
                     fd_maps[events[i].data.fd]->post_->j = 0;
-                    if (rq.method == "POST" && fd_maps[events[i].data.fd]->flagg == 1 && !it_fd->second->not_allow_method)
+                    if (fd_maps[events[i].data.fd]->requst.method == "POST" && fd_maps[events[i].data.fd]->flagg == 1 && !it_fd->second->not_allow_method)
                     {
                         if (fd_maps[events[i].data.fd]->is_cgi)
                         {
