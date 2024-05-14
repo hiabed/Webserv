@@ -117,12 +117,14 @@ void        multplixing::lanch_server(server parse)
                     exit(1);
                 }
                 fd_maps[client_socket]             = new Client();
+                garbage.push_back(fd_maps[client_socket]);
                 fd_maps[client_socket]->serv_      = parse;
                 client_history[client_socket]      = *it;
                 fd_maps[client_socket]->cgi_       = new cgi();
+                garbage.push_back(fd_maps[client_socket]->cgi_);
                 fd_maps[client_socket]->epoll_fd   = epoll_fd;
-                fd_maps[client_socket]->post_ = new post();
-                // fd_maps[client_socket]->get = new get();
+                fd_maps[client_socket]->post_      = new post();
+                garbage.push_back(fd_maps[client_socket]->post_);
                 fd_maps[client_socket]->is_cgi     = 0;
                 fd_maps[client_socket]->start_time = time(NULL);
                 fd_maps[client_socket]->flagg      = 0;
@@ -238,7 +240,7 @@ void        multplixing::lanch_server(server parse)
                         }
                         if (!fd_maps[events[i].data.fd]->is_cgi)
                         {
-                            if (fd_maps[events[i].data.fd]->post_->post_method(fd_maps[events[i].data.fd]->buf, events[i].data.fd)  && !it_fd->second->not_allow_method) 
+                            if (fd_maps[events[i].data.fd]->post_->post_method(fd_maps[events[i].data.fd]->buf, events[i].data.fd)  && !it_fd->second->not_allow_method)
                             {
                                 fd_maps[events[i].data.fd]->post_->j = 1;
                                 fd_maps[events[i].data.fd]->flagg = 0;

@@ -98,8 +98,15 @@ int request::parse_heade(std::string buffer, server &serv, int fd)
     method = vec[0];
     path   = vec[1];
     int hostt = 0;
+    if ((method.compare("DELETE") && method.compare("POST") && method.compare("GET")))
+    {
+        fd_maps[fd]->resp.response_error("501", fd);
+        if (multplixing::close_fd(fd, fd_maps[fd]->epoll_fd))
+                return 1;
+    }
     while (getline(stream, line))
     {
+
         line = post::keysToLower(line);
         if (line.substr(0, 4) == "host" && line.find("host:") != std::string::npos) {
             hostt = 1;
@@ -108,10 +115,7 @@ int request::parse_heade(std::string buffer, server &serv, int fd)
                 return 1;
         }
         else if (line.substr(0, 6) == "cookie" && line.find("cookie:") != std::string::npos)
-        {
             fd_maps[fd]->cgi_->HTTP_COOKIE = line.substr(8);
-            // fd_maps[fd]->cgi_->HTTP_COOKIE.erase(line.find("\r"));
-        }
     }
     if (!hostt)
     {

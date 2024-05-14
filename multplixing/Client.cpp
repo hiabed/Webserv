@@ -45,6 +45,7 @@ Client::~Client()
     waitpid(cgi_->clientPid, NULL, 0);
     remove(cgi_->file_out.c_str());
     delete cgi_;
+    delete post_;
 }
 
 Client::Client()

@@ -46,6 +46,7 @@ post &post::operator=(const post &other)
 
 post::~post()
 {
+    
 }
 
 bool post::is_end_of_chunk(std::string max_body_size, std::string upload_path)
