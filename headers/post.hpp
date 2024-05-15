@@ -53,7 +53,7 @@ public:
     std::string name;
     std::vector<std::string> vec;
     int suffix;
-    int len;
+    long len;
 
     int g;
     int j;

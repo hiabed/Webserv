@@ -209,16 +209,17 @@ std::string post::cut_header(std::string buffer)
     return buffer.substr(buffer.find("\r\n\r\n") + 4);
 }
 
-
-
 bool post::boundary(std::string buffer, std::string max_body_size, std::string upload_path)
 {
-    /* ----------------------------261896924513075486597166
-    Content-Disposition: form-data; name=""; filename="boundary.txt"
-    Content-Type: text/plain \r\n\r\n*/
+/* ----------------------------261896924513075486597166
+Content-Disposition: form-data; name=""; filename="boundary.txt"
+Content-Type: text/plain \r\n\r\n*/
     concat += buffer;
     len += buffer.length();
+    std::cout << len << std::endl;
+    std::cout << content_length << std::endl;
     std::string file;
+    std::stringstream ss;
     while (1)
     {
         if (v == 0 && concat.find(sep) == 0)
@@ -231,15 +232,6 @@ bool post::boundary(std::string buffer, std::string max_body_size, std::string u
                 {
                     file = name + generateUniqueSuffix() + extension;
                     outFile.open((upload_path + file).c_str());
-                    if (!outFile.is_open())
-                    {
-                        for (size_t i = 0; i < vec.size(); i++)
-                            remove(vec.at(i).c_str());
-                        outFile.close();
-                        vec.clear();
-                        g = 5;
-                        return true;
-                    }
                     vec.push_back(upload_path + file);
                     v = 1;
                 }
@@ -247,15 +239,6 @@ bool post::boundary(std::string buffer, std::string max_body_size, std::string u
                 {
                     file = generateUniqueFilename() + extension;
                     outFile.open((upload_path + file).c_str());
-                    if (!outFile.is_open())
-                    {
-                        for (size_t i = 0; i < vec.size(); i++)
-                            remove(vec.at(i).c_str());
-                        outFile.close();
-                        vec.clear();
-                        g = 5;
-                        return true;
-                    }
                     vec.push_back(upload_path + file);
                     v = 1;
                 }
@@ -263,15 +246,6 @@ bool post::boundary(std::string buffer, std::string max_body_size, std::string u
                 {
                     file = name + generateUniqueSuffix() + ".txt";
                     outFile.open((upload_path + file).c_str());
-                    if (!outFile.is_open())
-                    {
-                        for (size_t i = 0; i < vec.size(); i++)
-                            remove(vec.at(i).c_str());
-                        outFile.close();
-                        vec.clear();
-                        g = 5;
-                        return true;
-                    }
                     vec.push_back(upload_path + file);
                     v = 1;
                 }
@@ -279,15 +253,6 @@ bool post::boundary(std::string buffer, std::string max_body_size, std::string u
                 {
                     file = generateUniqueFilename() + ".txt";
                     outFile.open((upload_path + file).c_str());
-                    if (!outFile.is_open())
-                    {
-                        for (size_t i = 0; i < vec.size(); i++)
-                            remove(vec.at(i).c_str());
-                        outFile.close();
-                        vec.clear();
-                        g = 5;
-                        return true;
-                    }
                     vec.push_back(upload_path + file);
                     v = 1;
                 }
@@ -295,15 +260,6 @@ bool post::boundary(std::string buffer, std::string max_body_size, std::string u
                 {
                     file = name + generateUniqueSuffix() + ".txt";
                     outFile.open((upload_path + file).c_str());
-                    if (!outFile.is_open())
-                    {
-                        for (size_t i = 0; i < vec.size(); i++)
-                            remove(vec.at(i).c_str());
-                        outFile.close();
-                        vec.clear();
-                        g = 5;
-                        return true;
-                    }
                     vec.push_back(upload_path + file);
                     v = 1;
                 }
@@ -311,15 +267,6 @@ bool post::boundary(std::string buffer, std::string max_body_size, std::string u
                 {
                     file = generateUniqueFilename() + ".txt";
                     outFile.open((upload_path + file).c_str());
-                    if (!outFile.is_open())
-                    {
-                        for (size_t i = 0; i < vec.size(); i++)
-                            remove(vec.at(i).c_str());
-                        outFile.close();
-                        vec.clear();
-                        g = 5;
-                        return true;
-                    }
                     vec.push_back(upload_path + file);
                     v = 1;
                 }
@@ -329,7 +276,9 @@ bool post::boundary(std::string buffer, std::string max_body_size, std::string u
                         remove(vec.at(i).c_str());
                     outFile.close();
                     vec.clear();
+                    CType.clear();
                     g = 2;
+                    v = 0;
                     return true;
                 }
                 concat = cut_header(concat);
@@ -342,27 +291,18 @@ bool post::boundary(std::string buffer, std::string max_body_size, std::string u
             outFile << concat.substr(0, concat.find("\r\n" + sep));
             outFile.close();
             concat = concat.substr(concat.find(sep));
-        
+            v = 0;
         }
         else if (outFile.is_open() == true)
         {
             if (concat.length() > sep.length())
             {
                 outFile << concat.substr(0, concat.length() - sep.length());
-                if (len > atol(max_body_size.c_str()))
-                {
-                    for (size_t i = 0; i < vec.size(); i++)
-                        remove(vec.at(i).c_str());
-                    outFile.close();
-                    vec.clear();
-                    g = 3;
-                    return true;
-                }
                 concat = concat.substr(concat.length() - sep.length());
             }
             return false;
         }
-        if ((long long)len > atol(content_length.c_str()))
+        if (len > atol(content_length.c_str()))
         {
             for (size_t i = 0; i < vec.size(); i++)
                 remove(vec.at(i).c_str());
@@ -371,7 +311,7 @@ bool post::boundary(std::string buffer, std::string max_body_size, std::string u
             g = 1;
             return true;
         }
-        if ((long long)len > atol(max_body_size.c_str()))
+        if (len > atol(max_body_size.c_str()))
         {
             for (size_t i = 0; i < vec.size(); i++)
                 remove(vec.at(i).c_str());
@@ -380,7 +320,7 @@ bool post::boundary(std::string buffer, std::string max_body_size, std::string u
             g = 3;
             return true;
         }
-        if (concat == (sep + "--\r\n"))
+        if (len == atol(content_length.c_str()))
         {
             outFile.close();
             vec.clear();
