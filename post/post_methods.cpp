@@ -216,8 +216,6 @@ Content-Disposition: form-data; name=""; filename="boundary.txt"
 Content-Type: text/plain \r\n\r\n*/
     concat += buffer;
     len += buffer.length();
-    std::cout << len << std::endl;
-    std::cout << content_length << std::endl;
     std::string file;
     std::stringstream ss;
     while (1)
